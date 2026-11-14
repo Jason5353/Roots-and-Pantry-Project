@@ -1,7 +1,7 @@
 # Roots & Pantry – context for Claude
 
 Free family recipe app with deals from independent local food producers. Run by Jason Lewis
-(GitHub `Jason5353`), a trading name of BMS Cyber Defence Ltd (company 14975379).
+(GitHub `Jason5353`, repo `Jason5353/Roots-and-Pantry-Project`), a trading name of BMS Cyber Defence Ltd (company 14975379).
 Full decisions: the claude.ai project doc "Public app – decisions and plan".
 
 ## Layout
@@ -11,7 +11,7 @@ Full decisions: the claude.ai project doc "Public app – decisions and plan".
 
 ## Hosting
 - Cloudflare account **"Roots and Pantry Site"** (separate from BMS and the Lewis family site; never touch those).
-- Pages project for `site/`: root directory `site`, build `npm run build`, output `dist`. `main` = production, `test` = preview.
+- Pages project **`roots-and-pantry-project`** for `site/`: root directory `site`, build `npm run build`, output `dist`, `NODE_VERSION=22`. `main` = production (https://roots-and-pantry-project.pages.dev), `test` = preview (https://test.roots-and-pantry-project.pages.dev). Custom domain not attached until launch.
 - Domains: `rootsandpantry.co.uk` (main), `rootsandpantry.uk` (redirect to .co.uk, never sends email).
 - Email: `hello@rootsandpantry.co.uk` only → Cloudflare Email Routing → admin@bmscyberdefence.co.uk. App email via Brevo (EU). Brevo always adds an open pixel + List-Unsubscribe header; sign-in code emails must be plain text with no links.
 
