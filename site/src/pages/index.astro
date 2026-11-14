@@ -1,0 +1,75 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site, mail } from '../data/site.js';
+---
+<Layout>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="badge">Free forever · Starting in Shropshire</span>
+        <h1>Your family's recipes. <span class="l2">Your local producers.</span></h1>
+        <p class="lead">Keep the family cookbook in one private place, and get exclusive deals from independent food producers near you.</p>
+        <div class="btns" id="start">
+          <a class="btn btn-red" href={site.demo}>Try the demo</a>
+          <a class="btn btn-ghost" href="/for-producers/">I'm a food producer</a>
+        </div>
+        <p class="note">Family sign-up opens soon. Local producers can join now.</p>
+      </div>
+      <div class="collage" aria-hidden="true">
+        <figure class="snap s1"><img src="/img/sunday-roast.webp" alt="" width="1000" height="558" loading="eager" /><figcaption>Sunday roast</figcaption></figure>
+        <figure class="snap s2"><img src="/img/farmers-market.webp" alt="" width="800" height="1000" loading="eager" /><figcaption>Market day</figcaption></figure>
+        <figure class="snap s3"><img src="/img/christmas-cheese-scones.webp" alt="" width="1000" height="750" loading="eager" /><figcaption>Nan's cheese scones</figcaption></figure>
+        <div class="dealtag"><b>10% off local cheddar</b>From a farm 6 miles away, shown right next to the recipe.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block tint">
+    <div class="wrap">
+      <h2 class="sec">Why families choose Roots &amp; Pantry</h2>
+      <p class="sub">Recipe apps are everywhere. This one is free, private, and puts your money back into your local food community.</p>
+      <div class="features">
+        <div class="feature hi"><span class="ico" aria-hidden="true">💚</span><h3>Free forever</h3><p>Every feature, no subscription, no catches.</p></div>
+        <div class="feature hi"><span class="ico" aria-hidden="true">🏷️</span><h3>Local producer deals</h3><p>Exclusive offers from farms, bakers and makers near you, next to the ingredients you need.</p></div>
+        <div class="feature hi"><span class="ico" aria-hidden="true">🧺</span><h3>Support local, not supermarkets</h3><p>No big brands or supermarkets. Just independent food businesses.</p></div>
+        <div class="feature hi"><span class="ico" aria-hidden="true">📖</span><h3>Your family cookbook</h3><p>Grandma's recipes, family photos and the stories behind them, kept together.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2 class="sec">Made for the whole family</h2>
+      <div class="features">
+        <div class="feature"><span class="ico" aria-hidden="true">👪</span><h3>Every age</h3><p>Safe logins for kids, roles for parents and grandparents. No deals shown to under-13s.</p></div>
+        <div class="feature"><span class="ico" aria-hidden="true">📲</span><h3>Save from anywhere</h3><p>Import from recipe websites, type in handwritten recipes, or share from your phone.</p></div>
+        <div class="feature"><span class="ico" aria-hidden="true">🛒</span><h3>Shared shopping list</h3><p>One list for the household, with local deals matched to what's on it.</p></div>
+        <div class="feature"><span class="ico" aria-hidden="true">🔒</span><h3>Private by default</h3><p>No advertising trackers. Your recipes stay in your family group. Nothing is sold.</p></div>
+      </div>
+      <p class="note mt">Built to be easy for everyone, including older, disabled and neurodivergent family members. Read our <a href="/accessibility/">accessibility statement</a>.</p>
+    </div>
+  </section>
+
+  <section class="block green">
+    <div class="wrap">
+      <h2 class="sec">How it works</h2>
+      <ol class="steps">
+        <li><h3>Start your family group</h3><p>Sign up free and invite the family, from grandparents to kids.</p></li>
+        <li><h3>Add your recipes</h3><p>Paste a link, type one in, or snap Grandma's handwritten card.</p></li>
+        <li><h3>Spot local deals</h3><p>Offers from producers near you appear beside matching ingredients.</p></li>
+      </ol>
+      <p class="mt"><a class="btn btn-ghost" href="/how-it-works/">See how it works</a></p>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="wrap">
+      <h2 class="sec">Are you a local food producer?</h2>
+      <p class="sub">Farms, bakers, cheese makers, market stalls and independent shops: list your business and a deal for free. We're signing up Shropshire producers now.</p>
+      <div class="btns">
+        <a class="btn btn-green" href="/for-producers/">Find out more</a>
+        <a class="btn btn-ghost" href={mail('Listing my business on Roots & Pantry')}>Email us</a>
+      </div>
+    </div>
+  </section>
+</Layout>

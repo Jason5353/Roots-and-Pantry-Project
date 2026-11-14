@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site } from '../data/site.js';
+---
+<Layout title="Privacy & terms" description="Privacy notice, terms and company details for Roots & Pantry.">
+  <div class="wrap pagehead">
+    <h1>Privacy &amp; terms</h1>
+  </div>
+  <div class="wrap prose">
+    <div class="callout"><p><b>Coming before sign-up opens.</b> Our full privacy notice, family terms and producer terms will be published here before anyone can create an account.</p></div>
+    <h2>This website</h2>
+    <ul>
+      <li>This public website sets no cookies of its own and uses no advertising trackers.</li>
+      <li>We count visits with Cloudflare Web Analytics, which does not use cookies or track you across sites.</li>
+      <li>If you email us, we use your message only to reply, and we delete it when it's no longer needed.</li>
+    </ul>
+    <h2>Who we are</h2>
+    <p>Roots &amp; Pantry is a trading name of {site.company}, the data controller for Roots &amp; Pantry.</p>
+    <table class="simple">
+      <tbody>
+        <tr><th scope="row">Company</th><td>{site.company}</td></tr>
+        <tr><th scope="row">Registered in</th><td>England and Wales</td></tr>
+        <tr><th scope="row">Company number</th><td>{site.companyNumber}</td></tr>
+        <tr><th scope="row">Address</th><td>{site.address}</td></tr>
+        <tr><th scope="row">Email</th><td><a href={`mailto:${site.email}`}>{site.email}</a></td></tr>
+        <tr><th scope="row">Phone</th><td><a href={site.phoneHref}>{site.phone}</a></td></tr>
+      </tbody>
+    </table>
+    <h2>Complaints</h2>
+    <p>Please contact us first and we'll try to put things right. You can also complain to the <a href="https://ico.org.uk/make-a-complaint/">Information Commissioner's Office</a>.</p>
+  </div>
+</Layout>

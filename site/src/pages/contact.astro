@@ -1,0 +1,23 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site, mail } from '../data/site.js';
+---
+<Layout title="Contact" description="Get in touch with Roots & Pantry.">
+  <div class="wrap pagehead">
+    <h1>Contact us</h1>
+    <p class="sub">Questions, ideas, producer enquiries or press: one inbox, and a real person reads it.</p>
+  </div>
+  <div class="wrap prose">
+    <p class="hand">Say hello</p>
+    <p><a class="btn btn-red" href={`mailto:${site.email}`}>{site.email}</a></p>
+    <p>We aim to reply within 5 working days.</p>
+    <h2>Quick links</h2>
+    <ul>
+      <li><a href={mail('Listing my business on Roots & Pantry')}>List my food business</a></li>
+      <li><a href={mail('Nominate a producer')}>Nominate a local producer</a></li>
+      <li><a href={mail('Press enquiry')}>Press enquiry</a></li>
+      <li><a href={mail('Report a problem')}>Report a problem or a broken deal</a></li>
+    </ul>
+    <p>For our company details, see <a href="/privacy-and-terms/">Privacy &amp; terms</a>.</p>
+  </div>
+</Layout>

@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site, mail } from '../data/site.js';
+---
+<Layout title="Accessibility statement" description="How accessible Roots & Pantry is, and how to tell us about problems.">
+  <div class="wrap pagehead">
+    <h1>Accessibility statement</h1>
+    <p class="sub">We want everyone to be able to use Roots &amp; Pantry, whatever their age or ability.</p>
+  </div>
+  <div class="wrap prose">
+    <div class="callout"><p><b>Draft.</b> The site is still being built. This statement will be updated with full test results before launch.</p></div>
+    <h2>Our standard</h2>
+    <p>We are building this website and app to meet the <a href="https://www.w3.org/TR/WCAG22/">Web Content Accessibility Guidelines (WCAG) 2.2</a> at level AA.</p>
+    <h2>What we do</h2>
+    <ul>
+      <li>Text and buttons have strong colour contrast.</li>
+      <li>Everything works with a keyboard, and focus is clearly visible.</li>
+      <li>Pages work with screen readers and when zoomed to 200%.</li>
+      <li>Moving images stop if you've asked your device to reduce motion.</li>
+      <li>Videos will have captions.</li>
+      <li>We use plain English and short pages.</li>
+      <li>The app will have an easy mode: bigger text, less movement and simpler screens.</li>
+    </ul>
+    <h2>How we test</h2>
+    <p>Every change is checked with automated accessibility tests, a keyboard-only run-through and a screen reader check before it goes live.</p>
+    <h2>Known problems</h2>
+    <p>None known yet. If you find one, please tell us.</p>
+    <h2>Tell us about a problem</h2>
+    <p>If something doesn't work for you, or you need information in a different format, email <a href={mail('Accessibility problem')}>{site.email}</a>. We aim to reply within 5 working days.</p>
+    <p class="note">Statement prepared November 2026.</p>
+  </div>
+</Layout>

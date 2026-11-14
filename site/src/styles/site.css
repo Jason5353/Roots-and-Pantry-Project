@@ -1,0 +1,170 @@
+/* Roots & Pantry public site. Colours and fonts match the demo app.
+   Contrast on white: ink 14.1:1, ink-soft 6.4:1, basil 5.3:1, pepper 4.6:1 (white on pepper 4.6:1).
+   Yolk is for shapes and backgrounds only, never for text on white. */
+:root {
+  --pepper: #E0301E; --pepper-dark: #B4220F;
+  --yolk: #FFC93C; --yolk-soft: #FFF4D1;
+  --basil: #1F7A4D; --basil-soft: #E9F5EE;
+  --ink: #1E2A4A; --ink-soft: #56607A;
+  --paper: #FFFFFF; --line: #E4E6EC;
+  --display: "Bricolage Grotesque Variable", "Bricolage Grotesque", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --hand: "Caveat", "Segoe Print", "Bradley Hand", cursive;
+}
+* { box-sizing: border-box }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100% }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto } *, *::before, *::after { animation: none !important; transition: none !important } }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1.0625rem/1.6 var(--display) }
+img, video { display: block; max-width: 100%; height: auto }
+a { color: inherit; text-underline-offset: 3px }
+p a, li a, dd a { color: var(--ink); font-weight: 600 }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 0 6px var(--yolk); border-radius: 6px }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
+.skip { position: absolute; left: 12px; top: -60px; background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 0 0 10px 10px; z-index: 50; font-weight: 600 }
+.skip:focus { top: 0 }
+main:focus { outline: none }
+
+/* header */
+header.site { border-bottom: 1px solid var(--line); background: #fff; position: sticky; top: 0; z-index: 20 }
+header.site .wrap { display: flex; align-items: center; gap: 24px; min-height: 72px }
+.logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; flex: none }
+.logo .mark { width: 40px; height: 40px; border-radius: 11px; background: var(--basil); color: #fff; display: grid; place-items: center; font: 800 15px/1 var(--display); letter-spacing: -.02em }
+.logo .word { font-weight: 800; font-size: 1.45rem; letter-spacing: -.02em; line-height: 1 }
+.logo .amp { color: var(--pepper) }
+nav.main { display: flex; gap: 22px; margin-left: auto }
+nav.main a, .menu nav a { text-decoration: none; font-weight: 600; padding: 8px 0 }
+nav.main a:hover, nav.main a[aria-current=page] { text-decoration: underline; text-decoration-thickness: 2px; text-decoration-color: var(--pepper) }
+.menu { display: none; margin-left: auto; position: relative }
+.menu summary { list-style: none; cursor: pointer; font-weight: 700; border: 2px solid var(--ink); border-radius: 999px; padding: 8px 16px; min-height: 44px; display: flex; align-items: center }
+.menu summary::-webkit-details-marker { display: none }
+.menu nav { position: absolute; right: 0; top: calc(100% + 10px); background: #fff; border: 2px solid var(--ink); border-radius: 16px; padding: 10px 18px; display: grid; min-width: 220px; box-shadow: 0 12px 30px rgba(30, 42, 74, .15) }
+.menu nav a { padding: 10px 0; border-bottom: 1px solid var(--line) }
+.menu nav a:last-child { border-bottom: 0 }
+@media (max-width: 1000px) { nav.main { display: none } .menu { display: block } header.site .head-cta { display: none } }
+
+/* buttons */
+.btn { font: 700 1rem/1.1 var(--display); border: 2px solid transparent; border-radius: 999px; padding: 13px 22px; min-height: 48px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-align: center }
+.btn-red { background: var(--pepper); color: #fff }
+.btn-red:hover { background: var(--pepper-dark) }
+.btn-green { background: var(--basil); color: #fff }
+.btn-green:hover { background: #17603C }
+.btn-ghost { background: #fff; color: var(--ink); border-color: var(--ink) }
+.btn-ghost:hover { background: var(--yolk-soft) }
+.btns { display: flex; gap: 12px; flex-wrap: wrap; align-items: center }
+.note { font-size: .95rem; color: var(--ink-soft) }
+
+/* badges */
+.badge { display: inline-flex; align-items: center; gap: 8px; font: 700 .9rem/1 var(--display); background: var(--yolk-soft); border: 2px solid var(--yolk); border-radius: 999px; padding: 8px 14px }
+.badge.green { background: var(--basil-soft); border-color: var(--basil) }
+
+/* hero */
+.hero { padding: 56px 0 48px; overflow: hidden }
+.hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center }
+.hero .wrap > * { min-width: 0 }
+.hero h1 { font-weight: 800; font-size: clamp(2.5rem, 6.2vw, 4.6rem); line-height: .98; letter-spacing: -.035em; margin: 18px 0 18px }
+.hero h1 .l2 { color: var(--pepper) }
+.hero .lead { font-size: 1.25rem; max-width: 34ch; margin: 0 0 26px; color: var(--ink-soft) }
+.hand { font: 700 1.9rem/1.1 var(--hand); color: var(--pepper) }
+
+/* polaroids */
+.snap { margin: 0; background: #fff; padding: 10px 10px 44px; box-shadow: 0 10px 28px rgba(30, 42, 74, .18); border-radius: 3px; position: relative }
+.snap img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 2px }
+.snap figcaption { position: absolute; left: 12px; right: 12px; bottom: 8px; font: 700 1.45rem/1.1 var(--hand); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.collage { position: relative; height: 540px }
+.collage .snap { position: absolute; width: 300px }
+.collage .s1 { left: 0; top: 30px; width: 280px; transform: rotate(-5deg) }
+.collage .s2 { left: 290px; top: 0; width: 250px; transform: rotate(4deg); z-index: 2 }
+.collage .s3 { left: 60px; top: 290px; transform: rotate(3deg); z-index: 3 }
+.collage .dealtag { position: absolute; right: 0; bottom: 40px; z-index: 4; transform: rotate(-3deg) }
+.dealtag { background: #fff; border: 2px solid var(--basil); border-radius: 16px; padding: 12px 16px; box-shadow: 4px 4px 0 var(--basil); max-width: 260px; font-size: .95rem }
+.dealtag b { display: block; color: var(--basil); font-size: 1.05rem }
+
+/* video slot (videos added later, self-hosted) */
+.video { position: relative; border-radius: 22px; overflow: hidden; background: var(--yolk-soft); border: 2px solid var(--ink) }
+.video img { width: 100%; aspect-ratio: 16/9; object-fit: cover; opacity: .55 }
+.video .soon { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px }
+.video .soon span { background: #fff; border: 2px solid var(--ink); border-radius: 999px; padding: 10px 18px; font-weight: 700 }
+
+/* sections */
+section.block { padding: 56px 0 }
+section.tint { background: var(--yolk-soft) }
+section.green { background: var(--basil-soft) }
+h2.sec { font-weight: 800; font-size: clamp(1.9rem, 3.6vw, 2.6rem); letter-spacing: -.025em; line-height: 1.08; margin: 0 0 10px }
+.sub { color: var(--ink-soft); margin: 0 0 30px; font-size: 1.15rem; max-width: 60ch }
+.features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px }
+.features.three { grid-template-columns: repeat(3, 1fr) }
+.feature { background: #fff; border: 2px solid var(--ink); border-radius: 22px; padding: 22px }
+.feature .ico { font-size: 1.9rem; line-height: 1; display: block; margin-bottom: 12px }
+.feature h3 { margin: 0 0 6px; font-size: 1.25rem; line-height: 1.2 }
+.feature p { margin: 0; color: var(--ink-soft) }
+.feature.hi { border-color: var(--pepper); box-shadow: 5px 5px 0 var(--yolk) }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; counter-reset: step; list-style: none; padding: 0; margin: 0 }
+.steps li { background: #fff; border-radius: 22px; padding: 22px; border: 2px solid var(--line); counter-increment: step }
+.steps li::before { content: counter(step); display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 800; font-size: 1.2rem; margin-bottom: 12px }
+.steps h3 { margin: 0 0 6px; font-size: 1.2rem }
+.steps p { margin: 0; color: var(--ink-soft) }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start }
+.panel { border: 2px solid var(--ink); border-radius: 22px; padding: 26px; background: #fff }
+.panel h2, .panel h3 { margin-top: 0 }
+.panel h2 { font-size: 1.6rem; letter-spacing: -.02em }
+.ticks { list-style: none; padding: 0; margin: 0 }
+.ticks li { padding: 8px 0 8px 34px; position: relative; border-top: 1px solid var(--line) }
+.ticks li:first-child { border-top: 0 }
+.ticks li::before { content: "✓"; position: absolute; left: 4px; top: 8px; color: var(--basil); font-weight: 800 }
+.cta { text-align: center; padding: 64px 0 }
+.cta h2 { margin-bottom: 12px }
+.cta .sub { margin-left: auto; margin-right: auto }
+.cta .btns { justify-content: center }
+
+/* inner pages */
+.pagehead { padding: 48px 0 12px }
+.pagehead h1 { font-weight: 800; font-size: clamp(2.3rem, 5vw, 3.8rem); line-height: 1; letter-spacing: -.03em; margin: 0 0 12px }
+.pagehead .sub { margin-bottom: 0 }
+.prose { max-width: 70ch; padding: 20px 0 64px }
+.prose h2 { font-size: 1.6rem; letter-spacing: -.02em; margin: 2em 0 .4em; line-height: 1.15 }
+.prose h3 { font-size: 1.2rem; margin: 1.6em 0 .3em }
+.prose ul, .prose ol { padding-left: 1.3em }
+.prose li { margin: .3em 0 }
+.callout { background: var(--yolk-soft); border-left: 6px solid var(--yolk); border-radius: 12px; padding: 16px 20px; margin: 18px 0 }
+.callout.green { background: var(--basil-soft); border-left-color: var(--basil) }
+dl.faq dt { font-weight: 700; font-size: 1.15rem; margin: 1.6em 0 .3em }
+dl.faq dd { margin: 0; color: var(--ink) }
+table.simple { border-collapse: collapse; width: 100%; margin: 12px 0 }
+table.simple th, table.simple td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top }
+table.simple th { font-weight: 700 }
+table.simple td { overflow-wrap: anywhere }
+.counties { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; padding: 0; margin: 16px 0 }
+.counties li { border: 2px solid var(--line); border-radius: 999px; padding: 8px 14px; font-weight: 600 }
+.counties li.live { border-color: var(--basil); background: var(--basil-soft) }
+
+/* footer */
+footer.site { padding: 40px 0; color: var(--ink-soft); font-size: .95rem; border-top: 1px solid var(--line); background: #fff }
+footer.site .wrap { display: grid; grid-template-columns: 1.1fr 1fr 1.3fr; gap: 28px }
+footer.site p { margin: 0 0 8px }
+footer.site .fname { font-weight: 800; color: var(--ink); font-size: 1.15rem }
+footer.site nav { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; align-content: start }
+footer.site nav a { text-decoration: none; padding: 4px 0; color: var(--ink) }
+footer.site nav a:hover { text-decoration: underline }
+footer.site a { color: var(--ink) }
+
+@media (max-width: 900px) {
+  .hero .wrap, .two { grid-template-columns: 1fr }
+  .collage { height: 400px; max-width: 480px }
+  .features, .features.three, .steps { grid-template-columns: 1fr 1fr }
+  footer.site .wrap { grid-template-columns: 1fr }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 18px }
+  .features, .features.three, .steps { grid-template-columns: 1fr }
+  .collage { height: 390px }
+  .collage .snap { width: 180px; padding-bottom: 36px }
+  .collage .s2 { left: 170px; width: 160px } .collage .s3 { left: 20px; top: 200px; width: 200px }
+  .snap figcaption { font-size: 1.2rem }
+  .collage .dealtag { bottom: 0; max-width: 200px }
+  .logo .word { font-size: 1.15rem }
+  header.site .wrap { gap: 12px }
+  .logo { gap: 8px; min-width: 0; flex: 1 }
+  .logo .mark { width: 34px; height: 34px; font-size: 13px }
+  .menu summary { padding: 8px 14px }
+}
+.mt { margin-top: 24px }

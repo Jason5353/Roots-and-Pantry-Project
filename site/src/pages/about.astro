@@ -1,0 +1,25 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site } from '../data/site.js';
+---
+<Layout title="About" active="about" description="Why Roots & Pantry exists: family recipes, local food, and a free app built in Wellington, Telford.">
+  <div class="wrap pagehead">
+    <h1>About Roots &amp; Pantry</h1>
+    <p class="sub">A free family recipe app that sends your food money to local producers, not supermarkets.</p>
+  </div>
+  <div class="wrap prose">
+    <p>Roots &amp; Pantry started as one family's own recipe website in Wellington, Telford. Grandma's recipes, the ones saved from websites, and the photos of cooking together all ended up in one private place.</p>
+    <p>It turned out other families wanted the same thing. And while we were shopping for ingredients, we kept thinking about the brilliant small producers around Shropshire that most people never hear about.</p>
+    <p>So we put the two together. Families get a free, private cookbook. Local producers get a free way to reach them, right when they're deciding what to cook.</p>
+    <h2>What we believe</h2>
+    <ul class="ticks">
+      <li><b>Food brings families together.</b> Recipes are part of a family's story.</li>
+      <li><b>Local is better.</b> Money spent with independent producers stays in the community.</li>
+      <li><b>Privacy matters.</b> No advertising trackers, and we never sell your data.</li>
+      <li><b>Everyone should be able to use it</b>, whatever their age or ability.</li>
+    </ul>
+    <h2>Who runs it</h2>
+    <p>Roots &amp; Pantry is run by Jason Lewis and is a trading name of <a href={site.companyUrl}>{site.company}</a>, a small cyber security company in Telford. That background is why privacy and security are built in from the start.</p>
+    <p>Get in touch at <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+  </div>
+</Layout>

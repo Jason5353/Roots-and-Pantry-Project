@@ -1,0 +1,35 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site } from '../data/site.js';
+---
+<Layout title="How it works" active="how" description="How Roots & Pantry works for families and for local food producers.">
+  <div class="wrap pagehead">
+    <h1>How it works</h1>
+    <p class="sub">Three steps for families, three for producers. Short videos are on the way.</p>
+  </div>
+
+  <section class="block">
+    <div class="wrap">
+      <h2 class="sec">For families</h2>
+      <div class="video mt"><img src="/img/sunday-roast.webp" alt="" width="1000" height="558" loading="lazy" /><div class="soon"><span>Explainer video coming soon</span></div></div>
+      <ol class="steps mt">
+        <li><h3>Start your family group</h3><p>Sign up with an email code, Google or Facebook. Invite the family. Parents set up simple picture logins for younger children.</p></li>
+        <li><h3>Add your recipes</h3><p>Paste a link from any recipe website, type in a handwritten recipe, or share straight from your phone. Each recipe keeps a credit to where it came from.</p></li>
+        <li><h3>Cook, shop and save</h3><p>Scale servings, build a shared shopping list, and see deals from local producers next to matching ingredients.</p></li>
+      </ol>
+      <p class="mt"><a class="btn btn-red" href={site.demo}>Try the demo family</a></p>
+    </div>
+  </section>
+
+  <section class="block green">
+    <div class="wrap">
+      <h2 class="sec">For producers</h2>
+      <ol class="steps">
+        <li><h3>List your business free</h3><p>Add your location, contact details and where to find you: website, Facebook page, market stall or shop.</p></li>
+        <li><h3>Add a deal</h3><p>At least 10% off or a free item, for at least 30 days. Online code, show-at-the-till, or both.</p></li>
+        <li><h3>Families find you</h3><p>Your deal appears beside recipes and shopping lists that use your products, for families near you.</p></li>
+      </ol>
+      <p class="mt"><a class="btn btn-green" href="/for-producers/">Producer details</a></p>
+    </div>
+  </section>
+</Layout>

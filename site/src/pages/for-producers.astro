@@ -1,0 +1,82 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site, mail } from '../data/site.js';
+---
+<Layout title="For local food producers" active="producers" description="List your food business and an exclusive deal on Roots & Pantry for free. Reach local families when they plan what to cook.">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="badge green">Free to list, forever</span>
+        <h1>Reach local families <span class="l2">when they plan what to cook.</span></h1>
+        <p class="lead">Families keep their recipes and shopping lists in Roots &amp; Pantry. When a recipe needs something you make or sell, your deal appears right beside it.</p>
+        <div class="btns">
+          <a class="btn btn-green" href={mail('Listing my business on Roots & Pantry')}>Register your interest</a>
+          <a class="btn btn-ghost" href={site.demoProducers}>See the producer demo</a>
+        </div>
+        <p class="note">Self-service sign-up opens soon. Email us now to be one of the first Shropshire producers listed.</p>
+      </div>
+      <div class="collage" aria-hidden="true">
+        <figure class="snap s1"><img src="/img/farmers-market.webp" alt="" width="800" height="1000" loading="eager" /><figcaption>Market day</figcaption></figure>
+        <figure class="snap s2"><img src="/img/victoria-sponge.webp" alt="" width="1000" height="750" loading="eager" /><figcaption>Victoria sponge</figcaption></figure>
+        <figure class="snap s3"><img src="/img/leek-potato-soup.webp" alt="" width="1000" height="750" loading="eager" /><figcaption>Leek &amp; potato soup</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="block tint">
+    <div class="wrap">
+      <h2 class="sec">Who can join</h2>
+      <p class="sub">Independent food and drink businesses: farms, bakers, butchers, cheese makers, growers, makers, market stalls, farm shops and local independent shops. No supermarkets or big brands.</p>
+      <div class="features three">
+        <div class="feature"><span class="ico" aria-hidden="true">🌐</span><h3>Sell online?</h3><p>Give families a code to use on your own website. You keep the customer and the sale.</p></div>
+        <div class="feature"><span class="ico" aria-hidden="true">🧑‍🌾</span><h3>Market stall?</h3><p>Families show the deal on their phone at your stall. It works without signal.</p></div>
+        <div class="feature"><span class="ico" aria-hidden="true">🏪</span><h3>Local shop?</h3><p>Offer a deal across several products, like 10% off all local cheeses.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap two">
+      <div class="panel">
+        <h2>What you get</h2>
+        <ul class="ticks">
+          <li><b>A free listing</b> in our public directory, with your story, where to find you and a map.</li>
+          <li><b>Your deal beside matching recipes</b> and shopping lists, for families near you.</li>
+          <li><b>A simple dashboard</b> with monthly views, taps and "I used this" counts by town.</li>
+          <li><b>A promote kit:</b> a printable poster and postcard with your QR code, plus a ready-made Facebook post.</li>
+          <li><b>No contract, no commission,</b> and no website needed.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>The few rules</h2>
+        <ul class="ticks">
+          <li>Food and drink only.</li>
+          <li>Deals are at least 10% off or a free item, and run for at least 30 days.</li>
+          <li>Codes must work, and offers must be honest.</li>
+          <li>No health claims.</li>
+          <li>Alcohol deals are only shown to adults.</li>
+        </ul>
+        <p class="note">Selling non-food items? <a href={mail('Sponsored spots on Roots & Pantry')}>Talk to us</a> about sponsored spots.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block green">
+    <div class="wrap two">
+      <div>
+        <h2 class="sec">Our promises to you</h2>
+        <ul class="ticks">
+          <li><b>Free basic listing, forever.</b> Any paid extras later will be optional and clearly labelled.</li>
+          <li><b>Local first.</b> Deals are shown to families near you.</li>
+          <li><b>Fair and honest.</b> We never sell family data, and you see totals only.</li>
+          <li><b>A real person.</b> Questions go straight to us at <a href={`mailto:${site.email}`}>{site.email}</a>.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>Join the first wave</h2>
+        <p>We're building the Shropshire directory now, ready for families when sign-up opens. Send us your business name, what you make, and where families can find you.</p>
+        <div class="btns"><a class="btn btn-green" href={mail('Listing my business on Roots & Pantry')}>Email {site.email}</a></div>
+      </div>
+    </div>
+  </section>
+</Layout>

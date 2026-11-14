@@ -1,0 +1,47 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site } from '../data/site.js';
+---
+<Layout title="FAQ" active="faq" description="Answers to common questions about Roots & Pantry for families and producers.">
+  <div class="wrap pagehead">
+    <h1>Questions and answers</h1>
+  </div>
+  <div class="wrap prose">
+    <h2>For families</h2>
+    <dl class="faq">
+      <dt>Is it really free?</dt>
+      <dd>Yes, free forever, with every feature. Each family group can keep up to 250 recipes and 250 photos. If you ever need more, just ask.</dd>
+      <dt>How do you pay for it?</dt>
+      <dd>It costs very little to run. In future, producers may be able to pay for optional extras such as a sponsored spot. These will always be clearly labelled "Sponsored", never shown to under-13s, and never based on tracking you.</dd>
+      <dt>Is my family's data safe?</dt>
+      <dd>Your recipes and photos are private to your family group. Data is stored in the EU. There are no advertising trackers, and we never sell your data. Producers only ever see totals, never who you are.</dd>
+      <dt>Can children use it?</dt>
+      <dd>Yes. Parents set up accounts for children. Under-13s use a simple picture login with no email address, and they never see deals.</dd>
+      <dt>Where are the deals?</dt>
+      <dd>We're starting in Shropshire. You can join from anywhere in the UK and use the recipe app straight away. Deals appear as producers near you join.</dd>
+      <dt>How do the deals work?</dt>
+      <dd>Some producers give a code to use on their website. Others ask you to show the deal on your phone at their stall or shop, or just mention Roots &amp; Pantry.</dd>
+      <dt>Can I bring my recipes from other websites?</dt>
+      <dd>Yes. Paste a link from most recipe websites and we'll save the recipe with a credit and link back to where it came from.</dd>
+      <dt>What if I want to leave?</dt>
+      <dd>You can download your recipes and delete your account or your whole family group at any time.</dd>
+      <dt>Is it easy to use for older or disabled family members?</dt>
+      <dd>We're building to the WCAG 2.2 AA accessibility standard, with an easy mode for bigger text and simpler screens. See our <a href="/accessibility/">accessibility statement</a>.</dd>
+      <dt>When can we sign up?</dt>
+      <dd>Family sign-up opens soon. In the meantime, <a href={site.demo}>try the demo</a>.</dd>
+    </dl>
+    <h2>For producers</h2>
+    <dl class="faq">
+      <dt>What does it cost?</dt>
+      <dd>Nothing. Basic listing is free forever. No contract and no commission.</dd>
+      <dt>Do I need a website?</dt>
+      <dd>No. A Facebook page, a market stall or a shop address is fine.</dd>
+      <dt>What deal do I have to offer?</dt>
+      <dd>At least 10% off or a free item, for at least 30 days. You choose the products.</dd>
+      <dt>Will I see who used my deal?</dt>
+      <dd>No. You see monthly totals by town, never names or contact details.</dd>
+      <dt>How do I join?</dt>
+      <dd><a href="/for-producers/">Read about listing</a> or email <a href={`mailto:${site.email}`}>{site.email}</a>.</dd>
+    </dl>
+  </div>
+</Layout>
