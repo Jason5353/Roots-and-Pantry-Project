@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { site, mail } from '../data/site.js';
+import { site, mail, contact } from '../data/site.js';
 ---
 <Layout>
   <section class="hero">
@@ -13,7 +13,7 @@ import { site, mail } from '../data/site.js';
           <a class="btn btn-red" href={site.demo}>Try the demo</a>
           <a class="btn btn-ghost" href="/for-producers/">I'm a food producer</a>
         </div>
-        <p class="note">Family sign-up opens soon. Local producers can join now.</p>
+        <p class="note">Family sign-up opens soon. Local producers can <a href="/for-producers/">join now</a>.</p>
       </div>
       <div class="collage" aria-hidden="true">
         <figure class="snap s1"><img src="/img/sunday-roast.webp" alt="" width="1000" height="558" loading="eager" /><figcaption>Sunday roast</figcaption></figure>
@@ -68,9 +68,8 @@ import { site, mail } from '../data/site.js';
       <p class="sub">Farms, bakers, cheese makers, market stalls and independent shops: list your business and a deal for free. We're signing up Shropshire producers now.</p>
       <div class="btns">
         <a class="btn btn-green" href="/for-producers/">Find out more</a>
-        <a class="btn btn-ghost" href={mail('Listing my business on Roots & Pantry')}>Email us</a>
+        <a class="btn btn-ghost" href={`${site.app}/signin?next=/producer/join`}>List your business</a>
       </div>
-      <p class="note">Email link not opening? Write to <b>hello@rootsandpantry.co.uk</b></p>
     </div>
   </section>
 </Layout>

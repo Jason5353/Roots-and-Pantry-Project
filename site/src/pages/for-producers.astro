@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { site, mail } from '../data/site.js';
+import { site, mail, contact } from '../data/site.js';
 const counties = [
   ['Shropshire', 'Signing up now'],
   ['Staffordshire', 'Coming soon'],
@@ -18,10 +18,10 @@ const counties = [
         <h1>Reach local families <span class="l2">when they plan what to cook.</span></h1>
         <p class="lead">Families keep their recipes and shopping lists in Roots &amp; Pantry. When a recipe needs something you make or sell, your deal appears right beside it.</p>
         <div class="btns">
-          <a class="btn btn-green" href={mail('Listing my business on Roots & Pantry')}>Register your interest</a>
+          <a class="btn btn-green" href={`${site.app}/signin?next=/producer/join`}>List your business</a>
           <a class="btn btn-ghost" href={site.demoProducers}>See the producer demo</a>
         </div>
-        <p class="note">Self-service sign-up opens soon. Email <b>hello@rootsandpantry.co.uk</b> now to be one of the first Shropshire producers listed.</p>
+        <p class="note">Sign in with your email, add your details, and we'll check your listing by hand. Questions? <a href={`${site.app}/contact`}>Contact us</a>.</p>
       </div>
       <div class="collage" aria-hidden="true">
         <figure class="snap s1"><img src="/img/farmers-market.webp" alt="" width="800" height="1000" loading="eager" /><figcaption>Market day</figcaption></figure>
@@ -64,7 +64,7 @@ const counties = [
           <li>No health claims.</li>
           <li>Alcohol deals are only shown to adults.</li>
         </ul>
-        <p class="note">Selling non-food items? <a href={mail('Sponsored spots on Roots & Pantry')}>Talk to us</a> about sponsored spots.</p>
+        <p class="note">Selling non-food items? <a href={contact('Something else')}>Talk to us</a> about sponsored spots.</p>
       </div>
     </div>
   </section>
@@ -83,8 +83,7 @@ const counties = [
       <div class="panel">
         <h2>Know a great local producer?</h2>
         <p>Tell us who they are and we'll get in touch with them.</p>
-        <div class="btns"><a class="btn btn-ghost" href={mail('Nominate a producer')}>Nominate a producer</a></div>
-        <p class="note">Email link not opening? Write to <b>hello@rootsandpantry.co.uk</b></p>
+        <div class="btns"><a class="btn btn-ghost" href={contact('Nominate a producer')}>Nominate a producer</a></div>
       </div>
     </div>
   </section>
@@ -102,8 +101,8 @@ const counties = [
       </div>
       <div class="panel">
         <h2>Join the first wave</h2>
-        <p>We're building the Shropshire directory now, ready for families when sign-up opens. Send us your business name, what you make, and where families can find you.</p>
-        <div class="btns"><a class="btn btn-green" href={mail('Listing my business on Roots & Pantry')}>Email {site.email}</a></div>
+        <p>We're building the Shropshire directory now, ready for families when sign-up opens. It takes about five minutes.</p>
+        <div class="btns"><a class="btn btn-green" href={`${site.app}/signin?next=/producer/join`}>List your business</a></div>
       </div>
     </div>
   </section>
