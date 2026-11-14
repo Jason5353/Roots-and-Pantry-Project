@@ -18,7 +18,7 @@
     "NOTIFY_EMAIL": "hello@rootsandpantry.co.uk",
     "FROM_EMAIL": "hello@rootsandpantry.co.uk",
     "OWNER_EMAIL": "hello@rootsandpantry.co.uk",
-    "TURNSTILE_SITE_KEY": "REPLACE_WITH_SITE_KEY",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAGBL884bbg2kowkP",
     "PRODUCER_SIGNUP_OPEN": "true",
     "ENV_LABEL": ""
   },
@@ -35,7 +35,7 @@
         "NOTIFY_EMAIL": "hello@rootsandpantry.co.uk",
         "FROM_EMAIL": "hello@rootsandpantry.co.uk",
         "OWNER_EMAIL": "hello@rootsandpantry.co.uk",
-        "TURNSTILE_SITE_KEY": "REPLACE_WITH_SITE_KEY",
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAGBL884bbg2kowkP",
         "PRODUCER_SIGNUP_OPEN": "true",
         "ENV_LABEL": "TEST"
       },
