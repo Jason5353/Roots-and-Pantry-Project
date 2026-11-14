@@ -107,17 +107,21 @@ describe('producer sign-up', () => {
     const cookie = await signIn('farm@example.com');
     let r = await get('/producer', { Cookie: cookie });
     expect(r.headers.get('Location')).toContain('/producer/join');
-    r = await post('/producer/join', { business_name: '', postcode: 'nope' }, { Cookie: cookie });
+    r = await post('/producer/join', { business_name: '', postcode: 'nope', facebook: 'https://evil.example/page' }, { Cookie: cookie });
     expect(r.status).toBe(400);
-    expect(await r.text()).toContain('Enter a full UK postcode');
+    const errText = await r.text();
+    expect(errText).toContain('Enter a full UK postcode');
+    expect(errText).toContain('link to your Facebook page');
     r = await post('/producer/join', {
       business_name: 'Wrekin Dairy', contact_name: 'Sue', phone: '01952 123456', description: 'Small family dairy making cheese and butter.',
-      website: 'https://example.com', postcode: 'tf12eb', county: 'Shropshire', terms: 'yes',
+      website: 'https://example.com', facebook: 'https://www.facebook.com/wrekindairy', postcode: 'tf12eb', county: 'Shropshire', terms: 'yes',
     }, { Cookie: cookie });
     expect(r.status).toBe(303);
     const p = await env.DB.prepare('SELECT * FROM producers WHERE business_name = ?').bind('Wrekin Dairy').first();
     expect(p.status).toBe('pending');
     expect(p.postcode).toBe('TF1 2EB');
+    expect(p.facebook).toBe('https://www.facebook.com/wrekindairy');
+    expect(p.terms_version).toBe('2026-11-draft-2');
     expect((await outbox('hello@rootsandpantry.co.uk')).some((m) => m.subject.includes('Wrekin Dairy'))).toBe(true);
     expect((await outbox('farm@example.com')).some((m) => m.subject.includes('Thanks for joining'))).toBe(true);
     r = await get('/producer', { Cookie: cookie });

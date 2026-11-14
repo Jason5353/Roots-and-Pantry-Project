@@ -3,7 +3,7 @@ import { html, now, randomId, clean, normEmail, validEmail, validUrl, normPostco
 import { page, turnstileWidget, errorList, field, select } from './layout.js';
 import { verifyTurnstile, sendEmail, rateLimit, audit } from './services.js';
 
-export const TERMS_VERSION = '2026-11-draft';
+export const TERMS_VERSION = '2026-11-draft-2'; // 14-day minimum deal length
 
 export const COUNTIES = [
   'Bedfordshire', 'Berkshire', 'Bristol', 'Buckinghamshire', 'Cambridgeshire', 'Cheshire', 'Cornwall', 'Cumbria', 'Derbyshire', 'Devon',
@@ -123,14 +123,15 @@ function joinForm(env, user, { values = {}, errors = [] } = {}) {
         ${field({ id: 'contact_name', label: 'Your name', value: values.contact_name, autocomplete: 'name', error: err('contact_name'), max: 100 })}
         ${field({ id: 'phone', label: 'Phone number', type: 'tel', value: values.phone, autocomplete: 'tel', hint: 'Only for us to contact you. Never shown publicly.', error: err('phone'), max: 30 })}
         ${field({ id: 'description', label: 'What do you make or sell?', value: values.description, rows: 4, max: 600, hint: 'A few sentences. This will appear on your public listing.', error: err('description') })}
-        ${field({ id: 'website', label: 'Website or Facebook page', type: 'url', value: values.website, required: false, autocomplete: 'url', hint: 'Starting https://', error: err('website'), max: 300 })}
+        ${field({ id: 'website', label: 'Website', type: 'url', value: values.website, required: false, autocomplete: 'url', hint: 'Starting https://', error: err('website'), max: 300 })}
+        ${field({ id: 'facebook', label: 'Facebook page', type: 'url', value: values.facebook, required: false, hint: 'The full link, like https://www.facebook.com/yourbusiness', error: err('facebook'), max: 300 })}
         ${field({ id: 'postcode', label: 'Business postcode', value: values.postcode, autocomplete: 'postal-code', hint: 'Used to show your deals to families nearby. Market stalls: use your usual market.', error: err('postcode'), max: 10 })}
         ${select({ id: 'county', label: 'County', options: COUNTIES, value: values.county, error: err('county') })}
         ${field({ id: 'hygiene_link', label: 'Food hygiene rating link', type: 'url', value: values.hygiene_link, required: false, hint: 'From ratings.food.gov.uk, if you have one.', error: err('hygiene_link'), max: 300 })}
         <div class="field${err('terms') ? ' has-error' : ''}">
           ${err('terms') ? html`<p class="error" id="terms-err">${err('terms')}</p>` : ''}
           <div class="check"><input type="checkbox" id="terms" name="terms" value="yes" ${values.terms ? html`checked` : ''} ${err('terms') ? html`aria-invalid="true" aria-describedby="terms-err"` : ''} />
-          <label for="terms">I agree to the producer terms: food and drink only; deals of at least 10% off or a free item for at least 30 days; codes that work; honest offers; no health claims.</label></div>
+          <label for="terms">I agree to the producer terms: food and drink only; deals of at least 10% off or a free item for at least 14 days; codes that work; honest offers; no health claims.</label></div>
         </div>
         <button class="btn btn-green" type="submit">Send for approval</button>
       </form>
@@ -164,6 +165,7 @@ export async function producerHome(request, env, user) {
           <dt>Contact</dt><dd>${p.contact_name}, ${user.email}, ${p.phone}</dd>
           <dt>Location</dt><dd>${p.postcode}, ${p.county}</dd>
           <dt>Website</dt><dd>${p.website || 'None'}</dd>
+          <dt>Facebook</dt><dd>${p.facebook || 'None'}</dd>
           <dt>About</dt><dd>${p.description}</dd>
         </dl>
         <p class="note">Need to change something? <a href="/contact?topic=Listing%20my%20business">Contact us</a> for now. Editing is coming soon.</p>
@@ -187,6 +189,7 @@ export async function postJoin(request, env, user, form) {
     phone: clean(form.get('phone'), 30),
     description: clean(form.get('description'), 600),
     website: clean(form.get('website'), 300),
+    facebook: clean(form.get('facebook'), 300),
     postcode: clean(form.get('postcode'), 10),
     county: clean(form.get('county'), 60),
     hygiene_link: clean(form.get('hygiene_link'), 300),
@@ -198,6 +201,7 @@ export async function postJoin(request, env, user, form) {
   if (!/^[0-9+()\s-]{10,30}$/.test(v.phone)) errors.push({ field: 'phone', msg: 'Enter a phone number, like 01952 123456' });
   if (v.description.length < 20) errors.push({ field: 'description', msg: 'Tell families a little about what you make or sell (at least 20 characters)' });
   if (!validUrl(v.website)) errors.push({ field: 'website', msg: 'Enter a full web address starting https://' });
+  if (v.facebook && !(validUrl(v.facebook) && /^(www\.|m\.)?(facebook|fb)\.com$/i.test(new URL(v.facebook).hostname))) errors.push({ field: 'facebook', msg: 'Enter the full link to your Facebook page, starting https://www.facebook.com/' });
   const pc = normPostcode(v.postcode);
   if (!pc) errors.push({ field: 'postcode', msg: 'Enter a full UK postcode, like TF1 2EB' });
   if (!COUNTIES.includes(v.county)) errors.push({ field: 'county', msg: 'Choose your county' });
@@ -208,15 +212,15 @@ export async function postJoin(request, env, user, form) {
   const t = now();
   const id = randomId();
   await env.DB.prepare(
-    `INSERT INTO producers (id, user_id, business_name, contact_name, phone, website, postcode, county, description, hygiene_link, status, terms_version, terms_accepted_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
-  ).bind(id, user.id, v.business_name, v.contact_name, v.phone, v.website || null, pc, v.county, v.description, v.hygiene_link || null, TERMS_VERSION, t, t, t).run();
+    `INSERT INTO producers (id, user_id, business_name, contact_name, phone, website, facebook, postcode, county, description, hygiene_link, status, terms_version, terms_accepted_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+  ).bind(id, user.id, v.business_name, v.contact_name, v.phone, v.website || null, v.facebook || null, pc, v.county, v.description, v.hygiene_link || null, TERMS_VERSION, t, t, t).run();
   await audit(env, user.id, 'producer.created', id, { business: v.business_name, county: v.county });
   await sendEmail(env, {
     to: env.NOTIFY_EMAIL,
     replyTo: user.email,
     subject: `[New producer] ${v.business_name} (${v.county})`,
-    text: `A new producer has signed up and is waiting for approval.\n\nBusiness: ${v.business_name}\nContact: ${v.contact_name}\nEmail: ${user.email}\nPhone: ${v.phone}\nPostcode: ${pc}, ${v.county}\nWebsite: ${v.website || 'none'}\nHygiene rating: ${v.hygiene_link || 'none'}\n\n${v.description}\n\nApprove it in the admin dashboard (coming next). Producer ID ${id}`,
+    text: `A new producer has signed up and is waiting for approval.\n\nBusiness: ${v.business_name}\nContact: ${v.contact_name}\nEmail: ${user.email}\nPhone: ${v.phone}\nPostcode: ${pc}, ${v.county}\nWebsite: ${v.website || 'none'}\nFacebook: ${v.facebook || 'none'}\nHygiene rating: ${v.hygiene_link || 'none'}\n\n${v.description}\n\nApprove it in the admin dashboard (coming next). Producer ID ${id}`,
   });
   await sendEmail(env, {
     to: user.email,
