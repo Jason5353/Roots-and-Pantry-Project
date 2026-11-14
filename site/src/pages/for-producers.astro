@@ -1,6 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { site, mail } from '../data/site.js';
+const counties = [
+  ['Shropshire', 'Signing up now'],
+  ['Staffordshire', 'Coming soon'],
+  ['Cheshire', 'Coming soon'],
+  ['Herefordshire', 'Coming soon'],
+  ['Worcestershire', 'Coming soon'],
+  ['Powys', 'Coming soon'],
+];
 ---
 <Layout title="For local food producers" active="producers" description="List your food business and an exclusive deal on Roots & Pantry for free. Reach local families when they plan what to cook.">
   <section class="hero">
@@ -57,6 +65,25 @@ import { site, mail } from '../data/site.js';
           <li>Alcohol deals are only shown to adults.</li>
         </ul>
         <p class="note">Selling non-food items? <a href={mail('Sponsored spots on Roots & Pantry')}>Talk to us</a> about sponsored spots.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="block" id="counties">
+    <div class="wrap two">
+      <div>
+        <h2 class="sec">Where we are</h2>
+        <p class="sub">We're starting in Shropshire. A public directory of local producers opens here soon, so families can browse by county.</p>
+        <ul class="counties">
+          {counties.map(([name, status], i) => <li class={i === 0 ? 'live' : ''}>{name}: {status}</li>)}
+        </ul>
+        <p>Anywhere in the UK can join. If your county isn't listed yet, you can still sign up.</p>
+      </div>
+      <div class="panel">
+        <h2>Know a great local producer?</h2>
+        <p>Tell us who they are and we'll get in touch with them.</p>
+        <div class="btns"><a class="btn btn-ghost" href={mail('Nominate a producer')}>Nominate a producer</a></div>
       </div>
     </div>
   </section>

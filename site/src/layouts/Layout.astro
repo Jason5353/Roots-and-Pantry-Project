@@ -17,7 +17,6 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 const nav = [
   ['/how-it-works/', 'How it works', 'how'],
   ['/for-producers/', 'For producers', 'producers'],
-  ['/local-producers/', 'Local producers', 'local'],
   ['/about/', 'About', 'about'],
   ['/faq/', 'FAQ', 'faq'],
 ];
@@ -79,7 +78,6 @@ const year = new Date().getFullYear();
       <nav class="fcol" aria-label="Footer">
         <a href="/how-it-works/">How it works</a>
         <a href="/for-producers/">For producers</a>
-        <a href="/local-producers/">Local producers</a>
         <a href="/about/">About</a>
         <a href="/faq/">FAQ</a>
         <a href="/press/">Press</a>
@@ -89,7 +87,7 @@ const year = new Date().getFullYear();
       </nav>
       <div class="fcol small">
         <p>Roots &amp; Pantry is a trading name of <a href={site.companyUrl}>{site.company}</a>, registered in England and Wales, company number {site.companyNumber}.</p>
-        <p>No advertising trackers. Food and family photos on this site are AI-generated illustrations.</p>
+        <p>No advertising trackers. Photos on the home and producer pages are AI-generated illustrations; the About page shows our own family photos.</p>
         <p>© {year} {site.company}</p>
       </div>
     </div>
