@@ -75,7 +75,11 @@ describe('admin access', () => {
 describe('producer review', () => {
   it('approves a producer, which makes the public page live and emails them', async () => {
     const { p } = await newProducer('cheese2@example.com', 'Hill Top Cheese');
-    expect((await get(`/p/${p.slug}`)).status).toBe(404);
+    let pub = await get(`/p/${p.slug}`);
+    expect(pub.status).toBe(200);
+    let t = await pub.text();
+    expect(t).toContain('Hill Top Cheese is joining Roots &amp; Pantry');
+    expect(t).not.toContain('01952');
     const r = await post(`/admin/producers/${p.id}/status`, { to: 'approved' }, { Cookie: owner });
     expect(r.status).toBe(303);
     expect((await env.DB.prepare('SELECT status FROM producers WHERE id = ?').bind(p.id).first()).status).toBe('approved');
@@ -90,13 +94,30 @@ describe('producer review', () => {
     expect(r.status).toBe(400);
     r = await post(`/admin/producers/${p.id}/status`, { to: 'suspended', 'reason-suspended': 'Your code ROOTS10 does not work on your website.' }, { Cookie: owner });
     expect(r.status).toBe(303);
-    expect((await get(`/p/${p.slug}`)).status).toBe(404);
+    const pub = await get(`/p/${p.slug}`);
+    expect(pub.status).toBe(200);
+    const pt = await pub.text();
+    expect(pt).toContain('Bee Happy Honey is paused for now');
+    expect(pt).not.toContain('ROOTS10');
+    const own = await (await get(`/p/${p.slug}`, { Cookie: cookie })).text();
+    expect(own).toContain('Your listing is paused');
     const mail = (await outbox('honey@example.com'))[0];
     expect(mail.subject).toBe('Your Roots & Pantry listing is paused');
     expect(mail.body).toContain('ROOTS10 does not work');
     expect(await (await get('/producer', { Cookie: cookie })).text()).toContain('ROOTS10 does not work');
     await post(`/admin/producers/${p.id}/status`, { to: 'approved' }, { Cookie: owner });
     expect((await outbox('honey@example.com'))[0].subject).toBe('Your Roots & Pantry listing is live again');
+  });
+
+  it('tells visitors a rejected or unknown producer is not listed', async () => {
+    const { p } = await newProducer('nope@example.com', 'Not Food Ltd');
+    await post(`/admin/producers/${p.id}/status`, { to: 'rejected', 'reason-rejected': 'We only list food and drink businesses.' }, { Cookie: owner });
+    const r = await get(`/p/${p.slug}`);
+    expect(r.status).toBe(404);
+    const t = await r.text();
+    expect(t).toContain('This producer isn&#39;t listed');
+    expect(t).not.toContain('Not Food Ltd');
+    expect((await get('/p/no-such-producer')).status).toBe(404);
   });
 
   it('ignores status changes that skip a step', async () => {

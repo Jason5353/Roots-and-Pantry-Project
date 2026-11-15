@@ -358,11 +358,70 @@ export async function postRenew(request, env, user, id) {
 }
 
 // ---------- public listing page ----------
+// What visitors see when a listing isn't public. Never shows a rejection or suspension reason.
+const PREVIEW_NOTE = {
+  pending: (own) => `${own ? 'Only you' : 'Only you and the producer'} can see this page until the listing is approved. Visitors see a message saying it's being checked.`,
+  suspended: (own) => `${own ? 'Your listing is paused' : 'This listing is suspended'}, so visitors see a message saying it's paused, not this page.`,
+  rejected: (own) => `${own ? "Your listing wasn't approved" : 'This listing was not approved'}, so visitors are told it isn't listed.`,
+  withdrawn: (own) => `${own ? 'You have taken your listing off' : 'The producer has taken this listing off'} Roots & Pantry, so visitors are told it has left.`,
+};
+
+function visitorPage(env, user, { title, heading, text, status }) {
+  return page(env, {
+    title,
+    user,
+    status,
+    body: html`<div class="narrow">
+      <h1>${heading}</h1>
+      ${text.map((t) => html`<p>${t}</p>`)}
+      <section class="panel" aria-labelledby="next-h">
+        <h2 id="next-h">About Roots &amp; Pantry</h2>
+        <p>A free family recipe app that shows families deals from independent local food producers.</p>
+        <p class="btns"><a class="btn btn-ghost" href="${env.SITE_URL}">Find out more</a> <a class="btn btn-ghost" href="${env.SITE_URL}/for-producers/">List your business</a></p>
+      </section>
+    </div>`,
+  });
+}
+
+function notListedPage(env, user) {
+  return visitorPage(env, user, {
+    title: 'Not listed', status: 404,
+    heading: "This producer isn't listed on Roots & Pantry",
+    text: ['They may have left, or the link may be wrong. Check the address, or ask the producer for their latest link.'],
+  });
+}
+
+function statusPage(env, user, p) {
+  if (p.status === 'pending') {
+    return visitorPage(env, user, {
+      title: p.business_name, status: 200,
+      heading: `${p.business_name} is joining Roots & Pantry`,
+      text: ["We're checking this listing. We check every producer by hand, usually within a few days.", 'Their page and deals will appear here once it is approved. Please check back soon.'],
+    });
+  }
+  if (p.status === 'suspended') {
+    return visitorPage(env, user, {
+      title: p.business_name, status: 200,
+      heading: `${p.business_name} is paused for now`,
+      text: ["This producer's page and deals aren't available at the moment.", 'Please check back later.'],
+    });
+  }
+  if (p.status === 'withdrawn') {
+    return visitorPage(env, user, {
+      title: p.business_name, status: 410,
+      heading: `${p.business_name} has left Roots & Pantry`,
+      text: ['Their deals are no longer available here. You can still visit or contact them directly.'],
+    });
+  }
+  return notListedPage(env, user); // rejected: treat as never listed
+}
+
 export async function publicPage(request, env, user, slug) {
   const p = await env.DB.prepare('SELECT * FROM producers WHERE slug = ?').bind(slug).first();
-  if (!p) return null;
+  if (!p) return notListedPage(env, user);
   const isOwner = user && user.id === p.user_id;
-  if (p.status !== 'approved' && !isOwner) return null;
+  const isAdmin = user && (user.role === 'owner' || user.role === 'moderator');
+  if (p.status !== 'approved' && !isOwner && !isAdmin) return statusPage(env, user, p);
   const today = todayUK();
   const deals = (await listDeals(env, p.id)).filter((d) => ['live', 'waiting'].includes(dealState(d, p.status, today)[0]));
   const district = (p.postcode || '').split(' ')[0];
@@ -370,7 +429,7 @@ export async function publicPage(request, env, user, slug) {
     title: p.business_name,
     user,
     body: html`<div class="narrow">
-      ${p.status !== 'approved' ? html`<div class="callout"><p><b>Preview.</b> Only you can see this page until your listing is approved.</p></div>` : ''}
+      ${p.status !== 'approved' ? html`<div class="callout" role="note"><p><b>${isOwner ? 'Preview' : 'Admin view'}.</b> ${PREVIEW_NOTE[p.status]?.(isOwner) || ''}</p></div>` : ''}
       <p class="eyebrow">${district}, ${p.county}</p>
       <h1>${p.business_name}</h1>
       <p class="sub">${p.description}</p>

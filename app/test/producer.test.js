@@ -83,7 +83,10 @@ describe('public page and promote kit', () => {
   it('is private until approved, then public without codes', async () => {
     const cookie = await producer('public@example.com', 'Public Bakery');
     await post('/producer/deals/new', goodDeal({ title: 'Free loaf with any order', kind: 'free_item', percent: '', free_item: 'loaf', code: 'SECRET99' }), { Cookie: cookie });
-    expect((await get('/p/public-bakery')).status).toBe(404);
+    const waiting = await (await get('/p/public-bakery')).text();
+    expect(waiting).toContain('is joining Roots &amp; Pantry');
+    expect(waiting).not.toContain('Free loaf');
+    expect(waiting).not.toContain('We make lovely cheese');
     const preview = await (await get('/p/public-bakery', { Cookie: cookie })).text();
     expect(preview).toContain('Preview');
     await env.DB.prepare("UPDATE producers SET status = 'approved' WHERE slug = 'public-bakery'").run();
