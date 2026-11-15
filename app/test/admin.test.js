@@ -50,9 +50,15 @@ describe('admin access', () => {
     expect(t).toContain('Wrekin Bakery');
   });
 
-  it('asks for a fresh code after 15 minutes idle', async () => {
+  it('lets an admin carry on within 30 minutes of activity', async () => {
     const { cookie } = await signIn(OWNER);
-    await env.DB.prepare('UPDATE sessions SET last_auth_at = ?').bind(Math.floor(Date.now() / 1000) - 3600).run();
+    await env.DB.prepare('UPDATE sessions SET last_auth_at = ? WHERE id_hash = (SELECT id_hash FROM sessions ORDER BY created_at DESC LIMIT 1)').bind(Math.floor(Date.now() / 1000) - 25 * 60).run();
+    expect((await get('/admin/producers', { Cookie: cookie })).status).toBe(200);
+  });
+
+  it('asks for a fresh code after 30 minutes idle', async () => {
+    const { cookie } = await signIn(OWNER);
+    await env.DB.prepare('UPDATE sessions SET last_auth_at = ?').bind(Math.floor(Date.now() / 1000) - 31 * 60).run();
     let r = await get('/admin/producers', { Cookie: cookie });
     expect(r.status).toBe(303);
     expect(r.headers.get('Location')).toBe(`${BASE}/admin/confirm?next=%2Fadmin%2Fproducers`);

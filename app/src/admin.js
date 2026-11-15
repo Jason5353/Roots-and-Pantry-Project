@@ -1,12 +1,12 @@
 // Admin dashboard: owner + moderators. Producer review, deals, messages, team, audit log.
-// Every /admin request needs a recent email code: after 15 minutes without admin activity we ask again.
+// Every /admin request needs a recent email code: after 30 minutes without admin activity we ask again.
 import { html, raw, now, randomId, clean, normEmail, validEmail, sha256 } from './util.js';
 import { page, errorList, field } from './layout.js';
 import { sendEmail, rateLimit, audit } from './services.js';
 import { issueCode, checkCode, isAdmin, CODE_MINUTES_VALID } from './auth.js';
 import { dealState, offerText, howText, niceDate, todayUK } from './producer.js';
 
-export const ADMIN_IDLE_SECONDS = 15 * 60;
+export const ADMIN_IDLE_SECONDS = 30 * 60;
 const PAGE_SIZE = 100;
 
 const fmtTime = (ts) => new Date(ts * 1000).toLocaleString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -56,7 +56,7 @@ function confirmPage(env, user, { next, sent = false, errors = [] }) {
     status: errors.length ? 400 : 200,
     body: html`<div class="narrow">
       <h1>Confirm it's you</h1>
-      <p class="sub">For safety, admin pages ask for a fresh code from your email after 15 minutes without admin activity.</p>
+      <p class="sub">For safety, admin pages ask for a fresh code from your email after ${ADMIN_IDLE_SECONDS / 60} minutes without admin activity.</p>
       ${errorList(errors)}
       ${sent
         ? html`<p>We've emailed a 6-digit code to <b>${user.email}</b>. It works for ${CODE_MINUTES_VALID} minutes.</p>
