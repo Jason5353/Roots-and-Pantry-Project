@@ -65,3 +65,18 @@ export async function audit(env, actorId, action, target, detail) {
   await env.DB.prepare('INSERT INTO audit_log (actor_id, action, target, detail, created_at) VALUES (?, ?, ?, ?, ?)')
     .bind(actorId || null, action, target || null, detail ? JSON.stringify(detail) : null, now()).run();
 }
+
+// Daily clean-up, matching the retention periods in the privacy notice (site/src/pages/privacy-and-terms.astro).
+export async function cleanUp(env) {
+  const t = now();
+  const day = 86400;
+  const r = await env.DB.batch([
+    env.DB.prepare('DELETE FROM login_codes WHERE expires_at < ?').bind(t),
+    env.DB.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(t),
+    env.DB.prepare('DELETE FROM rate_limits WHERE window_start < ?').bind(t - day),
+    env.DB.prepare('DELETE FROM messages WHERE created_at < ?').bind(t - 365 * day),
+    env.DB.prepare('DELETE FROM audit_log WHERE created_at < ?').bind(t - 730 * day),
+    env.DB.prepare('DELETE FROM dev_outbox WHERE created_at < ?').bind(t - 7 * day),
+  ]);
+  return r.reduce((n, x) => n + (x.meta?.changes || 0), 0);
+}

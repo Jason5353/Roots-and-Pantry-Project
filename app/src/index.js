@@ -4,6 +4,7 @@ import { page } from './layout.js';
 import { loadUser, getSignin, postSignin, postCode, postSignout, isAdmin } from './auth.js';
 import { adminGate, getConfirm, postConfirmSend, postConfirm, overview, producerList, producerDetail, postProducerStatus, postEndDeal, messageList, messageDetail, postMessageStatus, team, postTeamAdd, postTeamRemove, auditLog } from './admin.js';
 import { directory } from './directory.js';
+import { cleanUp } from './services.js';
 import { tiles, emptyGlyphs, mapData, mapPage } from './map.js';
 import { home, getContact, postContact, getJoin, postJoin } from './pages.js';
 import { dashboard, getEdit, postEdit, getNewDeal, postNewDeal, getEditDeal, postEditDeal, postDealStatus, postRenew, publicPage, promote, printSheet, sendExpiryReminders } from './producer.js';
@@ -125,6 +126,7 @@ async function routeAdmin(request, env, user, url, path, method, form) {
 export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(sendExpiryReminders(env).then((n) => console.log(`expiry reminders sent: ${n}`)));
+    ctx.waitUntil(cleanUp(env).then((n) => console.log(`clean-up removed ${n} rows`)));
   },
   async fetch(request, env, ctx) {
     try {

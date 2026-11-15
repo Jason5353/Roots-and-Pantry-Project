@@ -1,21 +1,20 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { site } from '../data/site.js';
+const updated = '15 November 2026';
 ---
-<Layout title="Privacy & terms" description="Privacy notice, terms and company details for Roots & Pantry.">
+<Layout title="Privacy & terms" description="How Roots & Pantry uses your information, our producer terms and our company details.">
   <div class="wrap pagehead">
     <h1>Privacy &amp; terms</h1>
+    <p class="sub">How we use your information, in plain English. Last updated {updated}.</p>
   </div>
   <div class="wrap prose">
-    <div class="callout"><p><b>Coming before sign-up opens.</b> Our full privacy notice, family terms and producer terms will be published here before anyone can create an account.</p></div>
-    <h2>This website</h2>
-    <ul>
-      <li>This public website sets no cookies of its own and uses no advertising trackers.</li>
-      <li>We count visits with Cloudflare Web Analytics, which does not use cookies or track you across sites.</li>
-      <li>If you email us, we use your message only to reply, and we delete it when it's no longer needed.</li>
-    </ul>
-    <h2>Who we are</h2>
-    <p>Roots &amp; Pantry is a trading name of {site.company}, the data controller for Roots &amp; Pantry.</p>
+    <nav aria-label="On this page" class="callout">
+      <p><b>On this page:</b> <a href="#who">Who we are</a> · <a href="#short">The short version</a> · <a href="#what">What we collect and why</a> · <a href="#keep">How long we keep it</a> · <a href="#who-else">Who else handles it</a> · <a href="#cookies">Cookies</a> · <a href="#rights">Your rights</a> · <a href="#terms">Terms</a></p>
+    </nav>
+
+    <h2 id="who">Who we are</h2>
+    <p>Roots &amp; Pantry is a trading name of {site.company}. We decide how your information is used, so we're the "data controller" under UK data protection law.</p>
     <table class="simple">
       <tbody>
         <tr><th scope="row">Company</th><td>{site.company}</td></tr>
@@ -26,7 +25,92 @@ import { site } from '../data/site.js';
         <tr><th scope="row">Phone</th><td><a href={site.phoneHref}>{site.phone}</a></td></tr>
       </tbody>
     </table>
-    <h2>Complaints</h2>
-    <p>Please contact us first and we'll try to put things right. You can also complain to the <a href="https://ico.org.uk/make-a-complaint/">Information Commissioner's Office</a>.</p>
+    <p>Questions about your information go to Jason Lewis, who runs Roots &amp; Pantry, at <a href={`mailto:${site.email}`}>{site.email}</a>.</p>
+
+    <h2 id="short">The short version</h2>
+    <ul>
+      <li>We only collect what we need to run Roots &amp; Pantry.</li>
+      <li>We never sell your information, and we don't use advertising trackers.</li>
+      <li>Our database and files are stored in the European Union.</li>
+      <li>A producer's phone number and full postcode are never shown publicly.</li>
+      <li>When you search for producers, we only use the first half of your postcode, and we don't store it.</li>
+    </ul>
+    <p>Families can't sign up yet. Before they can, we'll update this notice to cover the family app.</p>
+
+    <h2 id="what">What we collect and why</h2>
+    <h3>Visiting this website</h3>
+    <p>We count visits with Cloudflare Web Analytics. It doesn't use cookies or follow you to other websites. Our hosting provider also keeps short-lived technical logs, such as your IP address, to keep the site secure and working. <b>Why:</b> to run a secure website (our legitimate interests).</p>
+
+    <h3>Searching for producers</h3>
+    <p>If you type a postcode into the producer search, we only use the first half (for example, TF1) to work out distances. We remove the second half straight away and don't store your search. <b>Why:</b> to show you producers near you (our legitimate interests).</p>
+
+    <h3>Signing in</h3>
+    <p>We use your email address to send you a 6-digit sign-in code. We store the code in a scrambled form that can't be read back. When you sign in, we set one cookie to keep you signed in. To stop abuse, we limit how many codes can be sent. To do that we keep a scrambled version of your email address and IP address for a short time. <b>Why:</b> to give you the account you asked for (contract) and to keep accounts secure (our legitimate interests).</p>
+
+    <h3>Producers</h3>
+    <p>When you list your business we collect:</p>
+    <ul>
+      <li><b>Shown publicly on your listing:</b> business name, what you make or sell, your postcode district (for example, TF1) and county, website, Facebook page, food hygiene rating link, shop address, markets and opening times, delivery area, and your deals.</li>
+      <li><b>Kept private, for us only:</b> your name, email address, phone number, full postcode, the date you agreed to our producer terms, and any notes about our decisions on your listing.</li>
+    </ul>
+    <p>Discount codes are never shown on public pages. Families will see them in the app once it opens. <b>Why:</b> to run your listing under our <a href="/producer-terms/">producer terms</a> (contract). We also keep records of our decisions in case of a dispute (our legitimate interests).</p>
+    <p>We email producers about their listing, for example when it's approved or when a deal is about to end. We don't send marketing emails unless you've asked for them.</p>
+
+    <h3>Contacting us</h3>
+    <p>If you use our contact form or email us, we keep your name, email address and message so we can reply. <b>Why:</b> to answer you (our legitimate interests).</p>
+
+    <h3>Keeping the service safe</h3>
+    <p>We keep a log of sign-ins, listing changes and admin decisions, with who made them and when. <b>Why:</b> to keep the service secure and fair, and to investigate problems (our legitimate interests).</p>
+
+    <h2 id="keep">How long we keep it</h2>
+    <table class="simple">
+      <thead><tr><th scope="col">Information</th><th scope="col">How long</th></tr></thead>
+      <tbody>
+        <tr><td>Sign-in codes</td><td>10 minutes, or until used</td></tr>
+        <tr><td>Signed-in session</td><td>30 days, or until you sign out</td></tr>
+        <tr><td>Scrambled email and IP address (abuse limits)</td><td>Up to 24 hours</td></tr>
+        <tr><td>Producer listing and deals</td><td>While you're listed. Deleted within 30 days of you asking us to remove your listing. We then keep a short record (business name, the terms you agreed to, and our decisions) for 2 years.</td></tr>
+        <tr><td>Contact form messages</td><td>12 months</td></tr>
+        <tr><td>Security and admin log</td><td>2 years</td></tr>
+        <tr><td>Database backups</td><td>Up to 30 days</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="who-else">Who else handles it</h2>
+    <p>These companies process information for us, under contracts that only let them use it to provide their service to us:</p>
+    <ul>
+      <li><b>Cloudflare</b> hosts our website, app, database and files, and runs the anti-spam check on our forms. Our database and files are stored in the EU. Cloudflare, Inc. is a US company, so some information (such as IP addresses) may pass through its systems elsewhere. That's protected by the UK Extension to the EU-US Data Privacy Framework and standard contractual clauses.</li>
+      <li><b>Brevo</b> (France) sends our emails, from servers in the EU. Brevo adds a small image to emails that tells us whether an email was opened. We've set this to be anonymous, and we don't use it to track you.</li>
+      <li><b>Zoho</b> runs our email inbox, in its EU data centre.</li>
+    </ul>
+    <p>Our map is served from our own website, so no map company sees what you look at. If you click "Get directions" on a producer's page, Google Maps opens and Google's privacy policy applies.</p>
+    <p>We'll only share information with anyone else if the law requires it.</p>
+
+    <h2 id="cookies">Cookies</h2>
+    <p>This public website sets no cookies. The app sets one cookie, only when you sign in, to keep you signed in. It's strictly necessary, so we don't ask for consent. Our anti-spam check (Cloudflare Turnstile) runs on some forms and doesn't use cookies to track you.</p>
+
+    <h2 id="rights">Your rights</h2>
+    <p>You can ask us to:</p>
+    <ul>
+      <li>give you a copy of the information we hold about you</li>
+      <li>correct anything that's wrong</li>
+      <li>delete your information</li>
+      <li>stop or limit how we use it</li>
+      <li>send your information to you or another organisation in a reusable format</li>
+    </ul>
+    <p>Email <a href={`mailto:${site.email}`}>{site.email}</a>. It's free, and we'll reply within one month. Producers can change most of their details themselves in their dashboard.</p>
+    <p>If you're unhappy with how we've used your information, please tell us first and we'll try to put it right. You can also complain to the <a href="https://ico.org.uk/make-a-complaint/">Information Commissioner's Office (ICO)</a>.</p>
+
+    <h2 id="children">Children</h2>
+    <p>Producer accounts are only for people aged 18 or over. The family app, which opens later, will have its own rules for children. We'll explain them here before it opens.</p>
+
+    <h2 id="terms">Terms</h2>
+    <ul>
+      <li><a href="/producer-terms/">Producer terms</a>: the rules for listing your business and your deals.</li>
+      <li>Family terms will be published here before families can sign up.</li>
+    </ul>
+
+    <h2 id="changes">Changes to this notice</h2>
+    <p>If we change this notice, we'll update the date at the top. We'll email producers about any important change before it takes effect.</p>
   </div>
 </Layout>

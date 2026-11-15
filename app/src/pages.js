@@ -4,7 +4,7 @@ import { page, turnstileWidget, errorList, field, select } from './layout.js';
 import { verifyTurnstile, sendEmail, rateLimit, audit } from './services.js';
 import { getProducer, makeSlug } from './producer.js';
 
-export const TERMS_VERSION = '2026-11-draft-2'; // 14-day minimum deal length
+export const TERMS_VERSION = '2026-11-draft-3'; // full producer terms page; 18+ confirmation (site/src/pages/producer-terms.astro)
 
 export { COUNTIES } from './data.js';
 import { COUNTIES } from './data.js';
@@ -124,7 +124,7 @@ function joinForm(env, user, { values = {}, errors = [] } = {}) {
         <div class="field${err('terms') ? ' has-error' : ''}">
           ${err('terms') ? html`<p class="error" id="terms-err">${err('terms')}</p>` : ''}
           <div class="check"><input type="checkbox" id="terms" name="terms" value="yes" ${values.terms ? html`checked` : ''} ${err('terms') ? html`aria-invalid="true" aria-describedby="terms-err"` : ''} />
-          <label for="terms">I agree to the producer terms: food and drink only; deals of at least 10% off or a free item for at least 14 days; codes that work; honest offers; no health claims.</label></div>
+          <label for="terms">I'm 18 or over, I can act for this business, and I agree to the <a href="${env.SITE_URL}/producer-terms/" target="_blank" rel="noopener">producer terms<span class="sr-only"> (opens in a new tab)</span></a>: food and drink only; deals of at least 10% off or a free item for at least 14 days; codes that work; honest offers; no health claims.</label></div>
         </div>
         <button class="btn btn-green" type="submit">Send for approval</button>
       </form>
@@ -164,7 +164,7 @@ export async function postJoin(request, env, user, form) {
   if (!pc) errors.push({ field: 'postcode', msg: 'Enter a full UK postcode, like TF1 2EB' });
   if (!COUNTIES.includes(v.county)) errors.push({ field: 'county', msg: 'Choose your county' });
   if (!validUrl(v.hygiene_link)) errors.push({ field: 'hygiene_link', msg: 'Enter a full web address starting https://' });
-  if (!v.terms) errors.push({ field: 'terms', msg: 'Tick the box to agree to the producer terms' });
+  if (!v.terms) errors.push({ field: 'terms', msg: 'Tick the box to confirm you are 18 or over and agree to the producer terms' });
   if (errors.length) return joinForm(env, user, { values: v, errors });
 
   const t = now();
