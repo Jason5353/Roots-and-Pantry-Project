@@ -464,16 +464,12 @@ export function qrSvg(text, { size = 240, label = 'QR code' } = {}) {
 
 const publicUrl = (request, p) => new URL(`/p/${p.slug}`, request.url).toString();
 
-async function bestDeal(env, p) {
-  const deals = (await listDeals(env, p.id)).filter((d) => ['live', 'waiting', 'scheduled'].includes(dealState(d, p.status)[0]));
-  return deals[0] || null;
-}
-
 export async function promote(request, env, user) {
   const p = await getProducer(env, user.id);
   if (!p) return Response.redirect(new URL('/producer/join', request.url), 303);
   const url = publicUrl(request, p);
-  const deal = await bestDeal(env, p);
+  const deals = await promoDeals(env, p);
+  const deal = deals[0] || null;
   const post = `🌱 We're on Roots & Pantry! 🌱\n\n${p.business_name} has an exclusive deal for families using Roots & Pantry, the free family recipe app that backs independent local food producers.\n\n${deal ? `👉 ${deal.title}\n\n` : ''}Find us here: ${url}\n\n#ShopLocal #${p.county.replace(/\s+/g, '')} #RootsAndPantry`;
   return page(env, {
     title: 'Promote kit',
@@ -490,7 +486,11 @@ export async function promote(request, env, user) {
       <section class="panel">
         <h2>Print a poster or postcard</h2>
         <p>Opens a print-ready page. Print it at home, or choose "Save as PDF" to send to a printer like VistaPrint.</p>
-        <p class="btns"><a class="btn btn-green" href="/producer/promote/poster">A4 poster</a> <a class="btn btn-ghost" href="/producer/promote/postcard">A6 postcard</a></p>
+        ${deals.length > 1 ? html`<form method="get" action="/producer/promote/poster" class="dealpick">
+          <div class="field"><label for="deal">Which deal should go on it?</label>
+          <select id="deal" name="deal">${deals.map((d) => html`<option value="${d.id}">${d.title}</option>`)}</select></div>
+          <p class="btns"><button class="btn btn-green" type="submit">A4 poster</button> <button class="btn btn-ghost" type="submit" formaction="/producer/promote/postcard">A6 postcard</button></p>
+        </form>` : html`<p class="btns"><a class="btn btn-green" href="/producer/promote/poster">A4 poster</a> <a class="btn btn-ghost" href="/producer/promote/postcard">A6 postcard</a></p>`}
       </section>
       <section class="panel">
         <h2>Facebook post</h2>
@@ -504,27 +504,70 @@ export async function promote(request, env, user) {
   });
 }
 
+// Hand-drawn leaf sprig, used as decoration on the poster and postcard.
+const SPRIG = raw(`<svg class="sprig" viewBox="0 0 120 60" aria-hidden="true" focusable="false"><path d="M4 52 C 30 44, 60 30, 116 8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><g fill="currentColor"><ellipse cx="28" cy="38" rx="11" ry="5" transform="rotate(-55 28 38)"/><ellipse cx="34" cy="50" rx="11" ry="5" transform="rotate(20 34 50)"/><ellipse cx="56" cy="27" rx="11" ry="5" transform="rotate(-60 56 27)"/><ellipse cx="64" cy="40" rx="11" ry="5" transform="rotate(15 64 40)"/><ellipse cx="86" cy="16" rx="10" ry="4.5" transform="rotate(-65 86 16)"/><ellipse cx="94" cy="28" rx="10" ry="4.5" transform="rotate(10 94 28)"/></g></svg>`);
+
+function claimStep(d) {
+  if (!d) return 'Find local deals near you';
+  if (d.redemption === 'mention') return d.how === 'online' ? 'Use our deal online' : 'Mention Roots & Pantry when you pay';
+  return 'Get the code in the free Roots & Pantry app';
+}
+
+function stampText(d) {
+  if (!d) return ['Local', 'deals'];
+  return d.kind === 'percent' ? [`${d.percent}%`, 'off'] : ['Free', 'gift'];
+}
+
+async function promoDeals(env, p) {
+  return (await listDeals(env, p.id)).filter((d) => ['live', 'waiting', 'scheduled'].includes(dealState(d, p.status)[0]));
+}
+
 export async function printSheet(request, env, user, kind) {
   const p = await getProducer(env, user.id);
   if (!p) return Response.redirect(new URL('/producer/join', request.url), 303);
   const url = publicUrl(request, p);
-  const deal = await bestDeal(env, p);
+  const deals = await promoDeals(env, p);
+  const wanted = new URL(request.url).searchParams.get('deal');
+  const deal = deals.find((d) => d.id === wanted) || deals[0] || null;
   const isPoster = kind === 'poster';
+  const [stamp1, stamp2] = stampText(deal);
+  const where = deal ? { online: 'online', in_person: 'in person', both: 'online and in person' }[deal.how] : '';
   const doc = html`<!doctype html>
 <html lang="en-GB"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="robots" content="noindex" />
 <title>${p.business_name} ${isPoster ? 'poster' : 'postcard'} | Roots &amp; Pantry</title><link rel="stylesheet" href="/app.css" /><link rel="stylesheet" href="/print.css" /><link rel="stylesheet" href="${isPoster ? '/page-a4.css' : '/page-a6.css'}" /></head>
 <body class="print-page ${isPoster ? 'poster' : 'postcard'}">
-  <div class="print-tools"><a href="/producer/promote">← Back</a> <button type="button" class="btn btn-red" data-print>Print or save as PDF</button></div>
+  <div class="print-tools"><a href="/producer/promote">← Back to the promote kit</a> <button type="button" class="btn btn-red" data-print>Print or save as PDF</button></div>
   <main class="sheet">
-    <div class="sheet-brand"><span class="mark" aria-hidden="true">R&amp;P</span> Roots <span class="amp">&amp;</span> Pantry</div>
-    <p class="sheet-kicker">Find our exclusive deal on</p>
-    <h1 class="sheet-title">Roots &amp; Pantry</h1>
-    <p class="sheet-business">${p.business_name}</p>
-    ${deal ? html`<p class="sheet-deal">${deal.title}</p>` : html`<p class="sheet-deal">Exclusive deals for local families</p>`}
-    <div class="sheet-qr">${qrSvg(url, { size: isPoster ? 380 : 190, label: `QR code for ${p.business_name} on Roots & Pantry` })}</div>
-    <p class="sheet-scan">Scan to see our deal</p>
-    <p class="sheet-url">${url.replace(/^https:\/\//, '')}</p>
-    <p class="sheet-foot">The free family recipe app that backs independent local food producers.</p>
+    <header class="sh-top">
+      <div class="sh-brand"><span class="sh-mark" aria-hidden="true">R&amp;P</span><span>Roots <span class="sh-amp">&amp;</span> Pantry</span></div>
+      <p class="sh-tag">Family recipes, local food</p>
+      ${SPRIG}
+    </header>
+    <section class="sh-offer">
+      <p class="sh-kicker">${deal ? 'Our exclusive deal' : 'Find us on Roots & Pantry'}</p>
+      <div class="sh-hero">
+        <p class="sh-title">${deal ? deal.title : 'Exclusive deals for local families'}</p>
+        <p class="sh-stamp" aria-label="${deal ? offerText(deal) : 'Local deals'}"><span>${stamp1}</span><span>${stamp2}</span></p>
+      </div>
+      <p class="sh-for">For Roots &amp; Pantry families${where ? `, ${where}` : ''}.${deal ? html`<br /><b>Until ${niceDate(deal.ends_on)}</b>` : ''}</p>
+    </section>
+    <section class="sh-claim">
+      <div class="sh-qr">${qrSvg(url, { size: isPoster ? 300 : 150, label: `QR code for ${p.business_name} on Roots & Pantry` })}</div>
+      <div class="sh-steps">
+        <p class="sh-how">How to claim</p>
+        <ol>
+          <li>Scan the code with your phone camera</li>
+          <li>See ${deal ? 'our deal' : 'our page'} on Roots &amp; Pantry</li>
+          <li>${claimStep(deal)}</li>
+        </ol>
+      </div>
+    </section>
+    <footer class="sh-foot">
+      ${SPRIG}
+      <p class="sh-business">${p.business_name}</p>
+      <p class="sh-url">${url.replace(/^https:\/\//, '')}</p>
+      <p class="sh-small">The free family recipe app that backs independent local food producers.${deal && deal.small_print ? ` ${deal.small_print}` : ''}</p>
+    </footer>
   </main>
   <script src="/print.js" defer></script>
 </body></html>`;

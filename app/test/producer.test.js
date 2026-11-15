@@ -104,7 +104,7 @@ describe('public page and promote kit', () => {
     expect(kit).toContain('/p/promo-dairy');
     const poster = await get('/producer/promote/poster', { Cookie: cookie });
     expect(poster.headers.get('Content-Security-Policy')).toContain("default-src 'self'");
-    expect(await poster.text()).toContain('Scan to see our deal');
+    expect(await poster.text()).toContain('How to claim');
   });
 });
 

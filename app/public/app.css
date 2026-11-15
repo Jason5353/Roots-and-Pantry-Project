@@ -165,3 +165,4 @@ ul.countylist a { display: inline-block; padding: 8px 0 }
 .maplibregl-ctrl-group button { width: 44px; height: 44px }
 @media (prefers-reduced-motion: reduce) { .maplibregl-popup, .maplibregl-marker { transition: none !important } }
 .maplibregl-ctrl-attrib a { display: inline-block; min-height: 24px; line-height: 24px }
+.dealpick select { width: 100% }
