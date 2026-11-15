@@ -6,6 +6,7 @@ export function securityHeaders(extra = {}) {
     'Content-Security-Policy': [
       "default-src 'self'",
       "script-src 'self' https://challenges.cloudflare.com",
+      "worker-src 'self'",
       "frame-src https://challenges.cloudflare.com",
       "style-src 'self'",
       "img-src 'self' data:",
@@ -29,7 +30,7 @@ export function securityHeaders(extra = {}) {
   };
 }
 
-export function page(env, { title, user, body, turnstile = false, status = 200, headers = {} }) {
+export function page(env, { title, user, body, head = '', turnstile = false, status = 200, headers = {} }) {
   const label = env.ENV_LABEL ? html`<aside class="envbar" aria-label="Test copy">${env.ENV_LABEL} copy · data here is for testing only</aside>` : '';
   const doc = html`<!doctype html>
 <html lang="en-GB">
@@ -40,6 +41,7 @@ export function page(env, { title, user, body, turnstile = false, status = 200, 
   <title>${title ? `${title} | ` : ''}Roots &amp; Pantry</title>
   <link rel="stylesheet" href="/app.css" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  ${head}
   ${turnstile ? raw('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>') : ''}
 </head>
 <body>

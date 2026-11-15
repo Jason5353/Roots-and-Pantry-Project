@@ -17,6 +17,9 @@
     "wrangler": "4.162.0"
   },
   "dependencies": {
+    "@protomaps/basemaps": "5.7.2",
+    "maplibre-gl": "6.18.0",
+    "pmtiles": "4.5.0",
     "qrcode-generator": "^2.0.4"
   }
 }

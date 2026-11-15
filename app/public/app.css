@@ -149,3 +149,18 @@ ul.countylist { columns: 2; padding-left: 20px }
 ul.countylist li { padding: 4px 0 }
 ul.countylist a { display: inline-block; padding: 8px 0 }
 @media (max-width: 600px) { ul.countylist { columns: 1 } }
+
+/* map */
+.mapwrap { position: relative; margin: 8px 0 12px }
+.map { height: min(70vh, 640px); min-height: 360px; border: 2px solid var(--ink); border-radius: 20px; overflow: hidden; background: #eef0f4 }
+.map-status { margin: 8px 0 0; font-weight: 700 }
+.map-status[hidden] { display: none }
+.pin { width: 44px; height: 44px; border: 0; padding: 0 0 8px; cursor: pointer; background: url(/map/pin.svg) center / contain no-repeat; color: #fff; font: 800 .95rem var(--display) }
+.pin:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 0 6px var(--yolk); border-radius: 50% }
+.maplibregl-popup-content { font: 400 1rem/1.5 var(--display); color: var(--ink); border-radius: 14px; padding: 14px 18px }
+.maplibregl-popup-content ul { margin: 0; padding-left: 18px }
+.maplibregl-popup-content a { font-weight: 700 }
+.maplibregl-popup-close-button { width: 44px; height: 44px; font-size: 1.4rem }
+.pop-title { font-weight: 800; margin: 0 0 6px; padding-right: 30px }
+.maplibregl-ctrl-group button { width: 44px; height: 44px }
+@media (prefers-reduced-motion: reduce) { .maplibregl-popup, .maplibregl-marker { transition: none !important } }

@@ -35,7 +35,7 @@ export function deliversTo(p, miles) {
 const distanceText = (m) => (m < 1 ? 'under a mile away' : `about ${Math.round(m)} ${Math.round(m) === 1 ? 'mile' : 'miles'} away`);
 const short = (s, n = 180) => (s.length > n ? `${s.slice(0, n).replace(/\s+\S*$/, '')}…` : s);
 
-async function approvedProducers(env) {
+export async function approvedProducers(env) {
   const today = todayUK();
   return env.DB.prepare(
     `SELECT p.slug, p.business_name, p.description, p.county, p.district, p.delivery_reach, p.delivery_miles, p.shop_address, p.market_days, p.website,
@@ -130,6 +130,7 @@ export async function directory(request, env, user, url) {
       body: html`${searchForms(env, { near: here.outcode, miles })}
         <section aria-labelledby="near-h">
           <h2 id="near-h">${nearby.length} ${nearby.length === 1 ? 'producer' : 'producers'} within ${miles} miles of ${place}</h2>
+          ${nearby.length + delivers.length ? html`<p><a class="btn btn-ghost btn-sm" href="/producers/map?near=${here.outcode}&amp;miles=${miles}">Show on a map</a></p>` : ''}
           ${nearby.length ? html`<ul class="pcards">${nearby.map((p) => card(p, { miles: p.miles }))}</ul>` : html`<p>None yet.${miles < 50 ? ' Try a bigger distance.' : ''}</p>${nominate(env)}`}
         </section>
         ${delivers.length ? html`<section aria-labelledby="del-h">
@@ -146,6 +147,7 @@ export async function directory(request, env, user, url) {
       body: html`${searchForms(env, { county })}
         <section aria-labelledby="county-h">
           <h2 id="county-h">${list.length} ${list.length === 1 ? 'producer' : 'producers'} in ${county}</h2>
+          ${list.length ? html`<p><a class="btn btn-ghost btn-sm" href="/producers/map?county=${encodeURIComponent(county)}">Show on a map</a></p>` : ''}
           ${list.length ? html`<ul class="pcards">${list.map((p) => card(p))}</ul>` : html`<p>No producers here yet.</p>${nominate(env)}`}
         </section>`,
     });

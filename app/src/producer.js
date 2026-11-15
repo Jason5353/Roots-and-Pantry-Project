@@ -437,7 +437,7 @@ export async function publicPage(request, env, user, slug) {
       <section class="panel" aria-labelledby="where-h">
         <h2 id="where-h">Where to find us</h2>
         <dl class="details">
-          ${p.shop_address ? html`<dt>Shop</dt><dd>${p.shop_address}</dd>` : ''}
+          ${p.shop_address ? html`<dt>Shop</dt><dd>${p.shop_address}<br /><a href="https://www.google.com/maps/dir/?api=1&amp;destination=${encodeURIComponent(p.shop_address)}" rel="noopener noreferrer">Get directions<span class="sr-only"> (opens Google Maps)</span></a></dd>` : ''}
           ${p.market_days ? html`<dt>Markets</dt><dd>${p.market_days}</dd>` : ''}
           ${p.website ? html`<dt>Website</dt><dd><a href="${p.website}" rel="noopener nofollow">${p.website.replace(/^https?:\/\//, '')}</a></dd>` : ''}
           ${p.facebook ? html`<dt>Facebook</dt><dd><a href="${p.facebook}" rel="noopener nofollow">Our Facebook page</a></dd>` : ''}

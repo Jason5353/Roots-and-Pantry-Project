@@ -1,0 +1,85 @@
+# Makes the UK map file (uk.pmtiles) from the latest Protomaps daily build of OpenStreetMap
+# and uploads it to the R2 bucket rp-tiles. Run by hand: Actions > "Update UK map" > Run workflow.
+# Run it again once or twice a year to refresh the map. Needs repository secrets
+# R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY and R2_ENDPOINT (an R2 token limited to rp-tiles).
+name: Update UK map
+
+on:
+  workflow_dispatch:
+    inputs:
+      maxzoom:
+        description: 'Most detailed zoom level (14 shows every street; 13 is smaller)'
+        default: '14'
+        type: choice
+        options: ['12', '13', '14', '15']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: map-tiles
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Get the pmtiles tool
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download --repo protomaps/go-pmtiles --pattern '*_Linux_x86_64.tar.gz' --output pmtiles.tar.gz
+          tar -xzf pmtiles.tar.gz
+          ./pmtiles version
+
+      - name: Find the latest daily build
+        id: build
+        run: |
+          for i in $(seq 0 14); do
+            d=$(date -u -d "-$i day" +%Y%m%d)
+            if curl -sfI "https://build.protomaps.com/$d.pmtiles" > /dev/null; then
+              echo "url=https://build.protomaps.com/$d.pmtiles" >> "$GITHUB_OUTPUT"
+              echo "Using build $d"
+              exit 0
+            fi
+          done
+          echo "No build found in the last 14 days" >&2
+          exit 1
+
+      - name: Cut out the UK
+        run: |
+          # UK and Northern Ireland, plus a little sea around the edges.
+          ./pmtiles extract "${{ steps.build.outputs.url }}" uk.pmtiles \
+            --bbox=-8.75,49.8,1.85,60.95 --maxzoom=${{ inputs.maxzoom }} --download-threads=8
+          ls -lh uk.pmtiles
+          size=$(stat -c %s uk.pmtiles)
+          # Stay well inside R2's free 10 GB.
+          if [ "$size" -gt 4000000000 ]; then
+            echo "uk.pmtiles is $(( size / 1000000 )) MB, over the 4 GB limit. Run again with a lower zoom." >&2
+            exit 1
+          fi
+          ./pmtiles show uk.pmtiles | head -20
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+        run: |
+          endpoint="${R2_ENDPOINT%/}"
+          endpoint="${endpoint%/rp-tiles}"
+          # Big parts = fewer write operations (R2 free tier: 1 million a month).
+          aws configure set default.s3.multipart_chunksize 100MB
+          aws s3 cp uk.pmtiles s3://rp-tiles/uk.pmtiles --endpoint-url "$endpoint" --content-type application/octet-stream --no-progress
+          aws s3api head-object --bucket rp-tiles --key uk.pmtiles --endpoint-url "$endpoint" --query '{size: ContentLength, updated: LastModified}'
+
+      - name: Summary
+        run: |
+          echo "### UK map updated" >> "$GITHUB_STEP_SUMMARY"
+          echo "Source: ${{ steps.build.outputs.url }} (© OpenStreetMap contributors, ODbL)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Size: $(du -h uk.pmtiles | cut -f1), max zoom ${{ inputs.maxzoom }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "The app picks up the new file within 10 minutes." >> "$GITHUB_STEP_SUMMARY"

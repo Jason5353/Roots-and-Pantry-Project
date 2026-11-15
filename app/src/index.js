@@ -4,6 +4,7 @@ import { page } from './layout.js';
 import { loadUser, getSignin, postSignin, postCode, postSignout, isAdmin } from './auth.js';
 import { adminGate, getConfirm, postConfirmSend, postConfirm, overview, producerList, producerDetail, postProducerStatus, postEndDeal, messageList, messageDetail, postMessageStatus, team, postTeamAdd, postTeamRemove, auditLog } from './admin.js';
 import { directory } from './directory.js';
+import { tiles, emptyGlyphs, mapData, mapPage } from './map.js';
 import { home, getContact, postContact, getJoin, postJoin } from './pages.js';
 import { dashboard, getEdit, postEdit, getNewDeal, postNewDeal, getEditDeal, postEditDeal, postDealStatus, postRenew, publicPage, promote, printSheet, sendExpiryReminders } from './producer.js';
 
@@ -27,6 +28,8 @@ async function handle(request, env, ctx) {
   if (env.DEV === 'true' && url.hostname.endsWith('rootsandpantry.co.uk')) {
     return new Response('Misconfigured: DEV mode is not allowed here', { status: 500 });
   }
+  // Map tiles: many small requests, no session needed, so skip the database.
+  if (url.pathname === '/tiles/uk.pmtiles' && (request.method === 'GET' || request.method === 'HEAD')) return tiles(request, env, ctx);
   const user = await loadUser(request, env);
   const path = url.pathname.replace(/\/+$/, '') || '/';
   const method = request.method;
@@ -72,6 +75,8 @@ async function handle(request, env, ctx) {
     case 'GET /producer/join': return user ? getJoin(request, env, user) : needUser();
     case 'POST /producer/join': return user ? postJoin(request, env, user, form) : needUser();
     case 'GET /producers': return directory(request, env, user, url);
+    case 'GET /producers/map': return mapPage(request, env, user, url);
+    case 'GET /producers/map.json': return mapData(request, env, url);
     case 'GET /healthz': return new Response('ok', { headers: { 'Cache-Control': 'no-store' } });
   }
 
@@ -87,6 +92,7 @@ async function handle(request, env, ctx) {
     if (method === 'POST' && action === 'renew') res = await postRenew(request, env, user, id);
     return res || notFound(env, user);
   }
+  if (method !== 'POST' && /^\/map\/fonts\/[^/]+\/\d+-\d+\.pbf$/.test(decodeURIComponent(path))) return emptyGlyphs();
   const pm = path.match(/^\/p\/([a-z0-9-]{1,60})$/);
   if (pm && method !== 'POST') return (await publicPage(request, env, user, pm[1])) || notFound(env, user);
   return notFound(env, user);

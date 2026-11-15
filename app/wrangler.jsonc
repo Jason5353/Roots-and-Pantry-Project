@@ -23,6 +23,7 @@
     "PRODUCER_SIGNUP_OPEN": "true",
     "ENV_LABEL": ""
   },
+  "r2_buckets": [{ "binding": "TILES", "bucket_name": "rp-tiles", "jurisdiction": "eu" }],
   "d1_databases": [
     { "binding": "DB", "database_name": "rp-app", "database_id": "a6f83336-a185-49a9-a128-5ab2efa37460", "migrations_dir": "migrations" }
   ],
@@ -41,6 +42,7 @@
         "PRODUCER_SIGNUP_OPEN": "true",
         "ENV_LABEL": "TEST"
       },
+      "r2_buckets": [{ "binding": "TILES", "bucket_name": "rp-tiles", "jurisdiction": "eu" }],
       "d1_databases": [
         { "binding": "DB", "database_name": "rp-app-test", "database_id": "b5d8ac37-fc15-43d8-95b1-06ea2de71389", "migrations_dir": "migrations" }
       ]
