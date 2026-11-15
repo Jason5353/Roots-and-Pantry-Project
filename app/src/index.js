@@ -1,7 +1,8 @@
 // Roots & Pantry app Worker: routing, CSRF checks and error handling.
 import { html } from './util.js';
 import { page } from './layout.js';
-import { loadUser, getSignin, postSignin, postCode, postSignout } from './auth.js';
+import { loadUser, getSignin, postSignin, postCode, postSignout, isAdmin } from './auth.js';
+import { adminGate, getConfirm, postConfirmSend, postConfirm, overview, producerList, producerDetail, postProducerStatus, postEndDeal, messageList, messageDetail, postMessageStatus, team, postTeamAdd, postTeamRemove, auditLog } from './admin.js';
 import { home, getContact, postContact, getJoin, postJoin } from './pages.js';
 import { dashboard, getEdit, postEdit, getNewDeal, postNewDeal, getEditDeal, postEditDeal, postDealStatus, postRenew, publicPage, promote, printSheet, sendExpiryReminders } from './producer.js';
 
@@ -43,11 +44,19 @@ async function handle(request, env, ctx) {
 
   const needUser = () => Response.redirect(new URL(`/signin?next=${encodeURIComponent(path)}`, url), 303);
 
+  if (path === '/admin' || path.startsWith('/admin/')) {
+    if (!user) return needUser();
+    const gate = await adminGate(request, env, user, path);
+    if (gate === 'notfound') return notFound(env, user);
+    if (gate) return gate;
+    return (await routeAdmin(request, env, user, url, path, method === 'HEAD' ? 'GET' : method, form)) || notFound(env, user);
+  }
+
   switch (`${method === 'HEAD' ? 'GET' : method} ${path}`) {
     case 'GET /': return home(env, user);
     case 'GET /contact': return getContact(request, env, user, url);
     case 'POST /contact': return postContact(request, env, user, form);
-    case 'GET /signin': return user ? Response.redirect(new URL('/producer', url), 303) : getSignin(request, env, url);
+    case 'GET /signin': return user ? Response.redirect(new URL(isAdmin(user) ? '/admin' : '/producer', url), 303) : getSignin(request, env, url);
     case 'POST /signin': return postSignin(request, env, form);
     case 'POST /signin/code': return postCode(request, env, form);
     case 'POST /signout': return postSignout(request, env, user);
@@ -79,6 +88,30 @@ async function handle(request, env, ctx) {
   const pm = path.match(/^\/p\/([a-z0-9-]{1,60})$/);
   if (pm && method !== 'POST') return (await publicPage(request, env, user, pm[1])) || notFound(env, user);
   return notFound(env, user);
+}
+
+async function routeAdmin(request, env, user, url, path, method, form) {
+  const owner = user.role === 'owner';
+  switch (`${method} ${path}`) {
+    case 'GET /admin': return overview(request, env, user);
+    case 'GET /admin/confirm': return getConfirm(request, env, user, url);
+    case 'POST /admin/confirm/send': return postConfirmSend(request, env, user, form);
+    case 'POST /admin/confirm': return postConfirm(request, env, user, form);
+    case 'GET /admin/producers': return producerList(request, env, user, url);
+    case 'GET /admin/messages': return messageList(request, env, user, url);
+    case 'GET /admin/team': return owner ? team(request, env, user) : null;
+    case 'POST /admin/team/add': return owner ? postTeamAdd(request, env, user, form) : null;
+    case 'POST /admin/team/remove': return owner ? postTeamRemove(request, env, user, form) : null;
+    case 'GET /admin/audit': return owner ? auditLog(request, env, user, url) : null;
+  }
+  const id = '([A-Za-z0-9_-]{10,40})';
+  let m;
+  if ((m = path.match(new RegExp(`^/admin/producers/${id}$`))) && method === 'GET') return producerDetail(request, env, user, m[1]);
+  if ((m = path.match(new RegExp(`^/admin/producers/${id}/status$`))) && method === 'POST') return postProducerStatus(request, env, user, m[1], form);
+  if ((m = path.match(new RegExp(`^/admin/deals/${id}/end$`))) && method === 'POST') return postEndDeal(request, env, user, m[1], form);
+  if ((m = path.match(new RegExp(`^/admin/messages/${id}$`))) && method === 'GET') return messageDetail(request, env, user, m[1]);
+  if ((m = path.match(new RegExp(`^/admin/messages/${id}/status$`))) && method === 'POST') return postMessageStatus(request, env, user, m[1], form);
+  return null;
 }
 
 export default {

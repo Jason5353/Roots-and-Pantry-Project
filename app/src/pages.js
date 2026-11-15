@@ -179,7 +179,7 @@ export async function postJoin(request, env, user, form) {
     to: env.NOTIFY_EMAIL,
     replyTo: user.email,
     subject: `[New producer] ${v.business_name} (${v.county})`,
-    text: `A new producer has signed up and is waiting for approval.\n\nBusiness: ${v.business_name}\nContact: ${v.contact_name}\nEmail: ${user.email}\nPhone: ${v.phone}\nPostcode: ${pc}, ${v.county}\nWebsite: ${v.website || 'none'}\nFacebook: ${v.facebook || 'none'}\nHygiene rating: ${v.hygiene_link || 'none'}\n\n${v.description}\n\nApprove it in the admin dashboard (coming next). Producer ID ${id}`,
+    text: `A new producer has signed up and is waiting for approval.\n\nBusiness: ${v.business_name}\nContact: ${v.contact_name}\nEmail: ${user.email}\nPhone: ${v.phone}\nPostcode: ${pc}, ${v.county}\nWebsite: ${v.website || 'none'}\nFacebook: ${v.facebook || 'none'}\nHygiene rating: ${v.hygiene_link || 'none'}\n\n${v.description}\n\nReview it in the admin dashboard: ${new URL(request.url).origin}/admin/producers/${id}`,
   });
   await sendEmail(env, {
     to: user.email,

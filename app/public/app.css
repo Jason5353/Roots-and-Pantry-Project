@@ -106,3 +106,28 @@ ul.plain li:first-child { border-top: 0 }
 .deal-public { border-color: var(--basil); box-shadow: 5px 5px 0 var(--yolk) }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
 @media (max-width: 600px) { .two-dates { grid-template-columns: 1fr } }
+
+/* admin */
+.admin { max-width: 960px }
+.adminnav { display: flex; flex-wrap: wrap; gap: 6px 22px; border-bottom: 2px solid var(--line); margin: -16px 0 28px; padding-bottom: 8px }
+.adminnav a, .tabs a { font-weight: 700; text-decoration: none; padding: 10px 0; min-height: 44px; display: inline-flex; align-items: center }
+.adminnav a:hover, .tabs a:hover { text-decoration: underline }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0 0 12px }
+.tabs a[aria-current=page] { text-decoration: underline; text-decoration-thickness: 3px; color: var(--basil) }
+ul.stats { list-style: none; padding: 0; margin: 0 0 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px }
+.stat a { display: block; border: 2px solid var(--ink); border-radius: 18px; padding: 16px 18px; text-decoration: none; min-height: 44px }
+.stat a:hover { background: var(--basil-soft) }
+.stat .n { display: block; font-size: 2.2rem; font-weight: 800; line-height: 1.1 }
+.stat .l { display: block; color: var(--ink-soft); font-weight: 600 }
+ul.rows { list-style: none; padding: 0; margin: 0 0 20px }
+ul.rows li { border-top: 1px solid var(--line); padding: 12px 0 }
+ul.rows li form { margin: 8px 0 0 }
+.row-title, .row-meta { margin: 0 0 4px } .row-meta { color: var(--ink-soft); font-size: .95rem; overflow-wrap: anywhere }
+.tag-p-approved { background: var(--basil-soft); color: #145234 } .tag-p-pending { background: var(--yolk-soft) }
+.tag-p-suspended, .tag-p-rejected { background: #FDECEA; color: var(--pepper-dark) }
+.status-suspended, .status-rejected { background: #FDECEA }
+.pre { white-space: pre-wrap; overflow-wrap: anywhere }
+.reasonform { margin: 0 }
+details.deal-actions { display: block; flex: 0 1 320px }
+details.deal-actions summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; text-decoration: underline; text-underline-offset: 3px }
+details.deal-actions form { margin: 8px 0 0 }

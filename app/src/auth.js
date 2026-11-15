@@ -23,6 +23,29 @@ function sessionCookie(token, maxAge) {
 
 const codeHash = (env, email, code) => hmac(env.CODE_PEPPER, `${email}:${code}`);
 
+// Store a fresh 6-digit code for this email (replaces any earlier one) and return it.
+export async function issueCode(env, email) {
+  const code = randomCode();
+  const t = now();
+  await env.DB.prepare(
+    'INSERT INTO login_codes (email, code_hash, expires_at, attempts, created_at) VALUES (?, ?, ?, 0, ?) ON CONFLICT(email) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at, attempts = 0, created_at = excluded.created_at',
+  ).bind(email, await codeHash(env, email, code), t + CODE_MINUTES * 60, t).run();
+  return code;
+}
+
+// Returns 'ok' (code used up), 'expired' or 'wrong'.
+export async function checkCode(env, email, code) {
+  const row = await env.DB.prepare('SELECT code_hash, expires_at, attempts FROM login_codes WHERE email = ?').bind(email).first();
+  if (!row || row.expires_at < now() || row.attempts >= MAX_ATTEMPTS) return 'expired';
+  await env.DB.prepare('UPDATE login_codes SET attempts = attempts + 1 WHERE email = ?').bind(email).run();
+  if (!safeEqual(row.code_hash, await codeHash(env, email, code))) return 'wrong';
+  await env.DB.prepare('DELETE FROM login_codes WHERE email = ?').bind(email).run();
+  return 'ok';
+}
+
+export const isAdmin = (user) => !!user && (user.role === 'owner' || user.role === 'moderator');
+export const CODE_MINUTES_VALID = CODE_MINUTES;
+
 function signinForm(env, { email = '', errors = [], next = '/producer' } = {}) {
   return page(env, {
     title: 'Sign in',
@@ -79,11 +102,7 @@ export async function postSignin(request, env, form) {
   const okEmail = await rateLimit(env, `code:email:${await sha256(email)}`, 3, 3600);
   const okIp = await rateLimit(env, `code:ip:${await sha256(ip)}`, 10, 3600);
   if (okEmail && okIp) {
-    const code = randomCode();
-    const t = now();
-    await env.DB.prepare(
-      'INSERT INTO login_codes (email, code_hash, expires_at, attempts, created_at) VALUES (?, ?, ?, 0, ?) ON CONFLICT(email) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at, attempts = 0, created_at = excluded.created_at',
-    ).bind(email, await codeHash(env, email, code), t + CODE_MINUTES * 60, t).run();
+    const code = await issueCode(env, email);
     await sendEmail(env, {
       to: email,
       subject: `Your Roots & Pantry code: ${code}`,
@@ -101,13 +120,9 @@ export async function postCode(request, env, form) {
   const bad = (msg) => codeForm(env, { email, next, errors: [{ field: 'code', msg }] });
   if (!validEmail(email)) return Response.redirect(new URL('/signin', request.url), 303);
   if (code.length !== 6) return bad('Enter the 6 digits from the email.');
-  const row = await env.DB.prepare('SELECT code_hash, expires_at, attempts FROM login_codes WHERE email = ?').bind(email).first();
-  if (!row || row.expires_at < now() || row.attempts >= MAX_ATTEMPTS) {
-    return bad('That code has expired or been used too many times. Please ask for a new one.');
-  }
-  await env.DB.prepare('UPDATE login_codes SET attempts = attempts + 1 WHERE email = ?').bind(email).run();
-  if (!safeEqual(row.code_hash, await codeHash(env, email, code))) return bad("That code doesn't match. Check the latest email and try again.");
-  await env.DB.prepare('DELETE FROM login_codes WHERE email = ?').bind(email).run();
+  const result = await checkCode(env, email, code);
+  if (result === 'expired') return bad('That code has expired or been used too many times. Please ask for a new one.');
+  if (result === 'wrong') return bad("That code doesn't match. Check the latest email and try again.");
 
   const t = now();
   let user = await env.DB.prepare('SELECT id, role FROM users WHERE email = ?').bind(email).first();
@@ -123,7 +138,7 @@ export async function postCode(request, env, form) {
   await env.DB.prepare('INSERT INTO sessions (id_hash, user_id, created_at, expires_at, last_auth_at) VALUES (?, ?, ?, ?, ?)')
     .bind(await sha256(token), user.id, t, t + SESSION_DAYS * 86400, t).run();
   await audit(env, user.id, 'signin', user.id);
-  return new Response(null, { status: 303, headers: { Location: next, 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400), 'Cache-Control': 'no-store' } });
+  return new Response(null, { status: 303, headers: { Location: next === '/producer' && isAdmin(user) ? '/admin' : next, 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400), 'Cache-Control': 'no-store' } });
 }
 
 export async function postSignout(request, env, user) {

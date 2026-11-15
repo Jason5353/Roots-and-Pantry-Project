@@ -13,9 +13,9 @@ const HEALTH_CLAIMS = /\b(cures?|cured|heal(s|ing)?|immun\w*|detox\w*|boosts?|pr
 // ---------- dates (UK local) ----------
 export const todayUK = (d = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(d);
 const addDays = (ymd, n) => { const d = new Date(`${ymd}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
-const daysBetween = (a, b) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86400000);
+export const daysBetween = (a, b) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86400000);
 const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(`${s}T12:00:00Z`));
-const niceDate = (ymd) => new Date(`${ymd}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+export const niceDate = (ymd) => new Date(`${ymd}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 // ---------- data ----------
 export async function getProducer(env, userId) {
@@ -46,7 +46,7 @@ export function dealState(deal, producerStatus, today = todayUK()) {
 }
 
 export const offerText = (d) => (d.kind === 'percent' ? `${d.percent}% off` : `Free ${d.free_item}`);
-const howText = { online: 'Online', in_person: 'In person', both: 'Online and in person' };
+export const howText = { online: 'Online', in_person: 'In person', both: 'Online and in person' };
 
 // ---------- dashboard ----------
 export async function dashboard(request, env, user, url) {
@@ -69,6 +69,7 @@ export async function dashboard(request, env, user, url) {
       <h1>${p.business_name}</h1>
       <p class="status status-${p.status}"><b>Status:</b> ${statusText[0]}</p>
       <p>${statusText[1]}</p>
+      ${p.status_reason && (p.status === 'rejected' || p.status === 'suspended') ? html`<p><b>Reason:</b> ${p.status_reason}</p>` : ''}
 
       <section class="panel" aria-labelledby="deals-h">
         <div class="panelhead"><h2 id="deals-h">Your deals</h2><a class="btn btn-green" href="/producer/deals/new">Add a deal</a></div>

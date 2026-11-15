@@ -30,7 +30,7 @@ export function securityHeaders(extra = {}) {
 }
 
 export function page(env, { title, user, body, turnstile = false, status = 200, headers = {} }) {
-  const label = env.ENV_LABEL ? html`<div class="envbar">${env.ENV_LABEL} copy · data here is for testing only</div>` : '';
+  const label = env.ENV_LABEL ? html`<aside class="envbar" aria-label="Test copy">${env.ENV_LABEL} copy · data here is for testing only</aside>` : '';
   const doc = html`<!doctype html>
 <html lang="en-GB">
 <head>
@@ -51,7 +51,7 @@ export function page(env, { title, user, body, turnstile = false, status = 200, 
       <nav class="main" aria-label="Account">
         <a href="/contact">Contact</a>
         ${user
-          ? html`<a href="/producer">My listing</a><form method="post" action="/signout" class="inline"><button class="linkbtn" type="submit">Sign out</button></form>`
+          ? html`${user.role === 'owner' || user.role === 'moderator' ? html`<a href="/admin">Admin</a>` : ''}<a href="/producer">My listing</a><form method="post" action="/signout" class="inline"><button class="linkbtn" type="submit">Sign out</button></form>`
           : html`<a href="/signin">Sign in</a>`}
       </nav>
     </div>
