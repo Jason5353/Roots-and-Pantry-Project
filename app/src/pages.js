@@ -171,9 +171,9 @@ export async function postJoin(request, env, user, form) {
   const id = randomId();
   const slug = await makeSlug(env, v.business_name, id);
   await env.DB.prepare(
-    `INSERT INTO producers (id, user_id, slug, business_name, contact_name, phone, website, facebook, postcode, county, description, hygiene_link, status, terms_version, terms_accepted_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
-  ).bind(id, user.id, slug, v.business_name, v.contact_name, v.phone, v.website || null, v.facebook || null, pc, v.county, v.description, v.hygiene_link || null, TERMS_VERSION, t, t, t).run();
+    `INSERT INTO producers (id, user_id, slug, business_name, contact_name, phone, website, facebook, postcode, district, county, description, hygiene_link, status, terms_version, terms_accepted_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+  ).bind(id, user.id, slug, v.business_name, v.contact_name, v.phone, v.website || null, v.facebook || null, pc, pc.split(' ')[0], v.county, v.description, v.hygiene_link || null, TERMS_VERSION, t, t, t).run();
   await audit(env, user.id, 'producer.created', id, { business: v.business_name, county: v.county });
   await sendEmail(env, {
     to: env.NOTIFY_EMAIL,

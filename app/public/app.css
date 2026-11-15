@@ -131,3 +131,21 @@ ul.rows li form { margin: 8px 0 0 }
 details.deal-actions { display: block; flex: 0 1 320px }
 details.deal-actions summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; text-decoration: underline; text-underline-offset: 3px }
 details.deal-actions form { margin: 8px 0 0 }
+
+/* directory */
+.dir { max-width: 960px }
+.finders { align-items: start }
+.finder h2 { margin-top: 0 }
+.finder select { width: 100% }
+ul.pcards { list-style: none; padding: 0; margin: 12px 0 28px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px }
+.pcard { border: 2px solid var(--ink); border-radius: 20px; padding: 18px 20px; background: #fff }
+.pcard-name { font-size: 1.25rem; margin: 0 0 4px; line-height: 1.25 }
+.pcard-name a { text-decoration: none } .pcard-name a:hover { text-decoration: underline }
+.pcard-where { margin: 0 0 8px; color: var(--ink-soft); font-weight: 600; font-size: .95rem }
+.pcard-desc { margin: 0 0 10px }
+ul.pcard-tags { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px }
+ul.pcard-tags li { background: var(--basil-soft); color: #145234; font-weight: 700; font-size: .85rem; border-radius: 999px; padding: 3px 10px }
+ul.countylist { columns: 2; padding-left: 20px }
+ul.countylist li { padding: 4px 0 }
+ul.countylist a { display: inline-block; padding: 8px 0 }
+@media (max-width: 600px) { ul.countylist { columns: 1 } }

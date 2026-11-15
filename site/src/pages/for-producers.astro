@@ -48,7 +48,7 @@ const counties = [
       <div class="panel">
         <h2>What you get</h2>
         <ul class="ticks">
-          <li><b>A free listing</b> in our public directory, with your story, where to find you and a map.</li>
+          <li><b>A free listing</b> in our public directory, with your story and where to find you. Families search it by postcode or county.</li>
           <li><b>Your deal beside matching recipes</b> and shopping lists, for families near you.</li>
           <li><b>A simple dashboard</b> with monthly views, taps and "I used this" counts by town.</li>
           <li><b>A promote kit:</b> a printable poster and postcard with your QR code, plus a ready-made Facebook post.</li>
@@ -74,7 +74,7 @@ const counties = [
     <div class="wrap two">
       <div>
         <h2 class="sec">Where we are</h2>
-        <p class="sub">We're starting in Shropshire. A public directory of local producers opens here soon, so families can browse by county.</p>
+        <p class="sub">We're starting in Shropshire. Families can find you in our <a href={`${site.app}/producers`}>public directory</a>, by distance from their postcode or by county.</p>
         <ul class="counties">
           {counties.map(([name, status], i) => <li class={i === 0 ? 'live' : ''}>{name}: {status}</li>)}
         </ul>

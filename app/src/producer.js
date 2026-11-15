@@ -191,9 +191,9 @@ export async function postEdit(request, env, user, form) {
   const slug = v.business_name !== p.business_name ? await makeSlug(env, v.business_name, p.id) : p.slug;
   await env.DB.prepare(
     `UPDATE producers SET business_name = ?, contact_name = ?, phone = ?, description = ?, website = ?, facebook = ?, shop_address = ?, market_days = ?,
-     postcode = ?, county = ?, delivery_reach = ?, delivery_miles = ?, hygiene_link = ?, slug = ?, updated_at = ? WHERE id = ?`,
+     postcode = ?, district = ?, county = ?, delivery_reach = ?, delivery_miles = ?, hygiene_link = ?, slug = ?, updated_at = ? WHERE id = ?`,
   ).bind(v.business_name, v.contact_name, v.phone, v.description, v.website || null, v.facebook || null, v.shop_address || null, v.market_days || null,
-    pc, v.county, v.delivery_reach, miles, v.hygiene_link || null, slug, now(), p.id).run();
+    pc, pc.split(' ')[0], v.county, v.delivery_reach, miles, v.hygiene_link || null, slug, now(), p.id).run();
   await audit(env, user.id, 'producer.edited', p.id);
   return Response.redirect(new URL('/producer?done=saved', request.url), 303);
 }

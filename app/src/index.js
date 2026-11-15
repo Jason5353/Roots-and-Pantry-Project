@@ -3,6 +3,7 @@ import { html } from './util.js';
 import { page } from './layout.js';
 import { loadUser, getSignin, postSignin, postCode, postSignout, isAdmin } from './auth.js';
 import { adminGate, getConfirm, postConfirmSend, postConfirm, overview, producerList, producerDetail, postProducerStatus, postEndDeal, messageList, messageDetail, postMessageStatus, team, postTeamAdd, postTeamRemove, auditLog } from './admin.js';
+import { directory } from './directory.js';
 import { home, getContact, postContact, getJoin, postJoin } from './pages.js';
 import { dashboard, getEdit, postEdit, getNewDeal, postNewDeal, getEditDeal, postEditDeal, postDealStatus, postRenew, publicPage, promote, printSheet, sendExpiryReminders } from './producer.js';
 
@@ -70,6 +71,7 @@ async function handle(request, env, ctx) {
     case 'GET /producer/promote/postcard': return user ? printSheet(request, env, user, 'postcard') : needUser();
     case 'GET /producer/join': return user ? getJoin(request, env, user) : needUser();
     case 'POST /producer/join': return user ? postJoin(request, env, user, form) : needUser();
+    case 'GET /producers': return directory(request, env, user, url);
     case 'GET /healthz': return new Response('ok', { headers: { 'Cache-Control': 'no-store' } });
   }
 

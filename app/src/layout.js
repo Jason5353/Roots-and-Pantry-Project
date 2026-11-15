@@ -49,6 +49,7 @@ export function page(env, { title, user, body, turnstile = false, status = 200, 
     <div class="wrap">
       <a href="${env.SITE_URL}" class="logo"><span class="mark" aria-hidden="true">R&amp;P</span><span class="word">Roots <span class="amp">&amp;</span> Pantry</span></a>
       <nav class="main" aria-label="Account">
+        <a href="/producers">Producers</a>
         <a href="/contact">Contact</a>
         ${user
           ? html`${user.role === 'owner' || user.role === 'moderator' ? html`<a href="/admin">Admin</a>` : ''}<a href="/producer">My listing</a><form method="post" action="/signout" class="inline"><button class="linkbtn" type="submit">Sign out</button></form>`
