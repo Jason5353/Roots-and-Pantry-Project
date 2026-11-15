@@ -6,3 +6,5 @@ dist/
 .env.*
 .dev.vars
 .wrangler/
+app/public/fonts/
+app/public/map/vendor/

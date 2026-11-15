@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { site, mail } from '../data/site.js';
+import { site, mail, contact } from '../data/site.js';
 ---
 <Layout title="Press" description="Facts and contacts for journalists writing about Roots & Pantry.">
   <div class="wrap pagehead">
@@ -30,6 +30,6 @@ import { site, mail } from '../data/site.js';
     <h2>Logo and images</h2>
     <p>Our logo and screenshots will be available here soon. Ask us for them in the meantime.</p>
     <h2>Contact</h2>
-    <p><a href={mail('Press enquiry')}>{site.email}</a></p>
+    <p><a href={contact('Press')}>Send us a message</a> or email <b>{site.email}</b>.</p>
   </div>
 </Layout>

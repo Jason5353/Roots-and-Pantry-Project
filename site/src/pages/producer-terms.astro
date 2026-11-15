@@ -1,0 +1,96 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site, contact } from '../data/site.js';
+// Keep in step with TERMS_VERSION in app/src/pages.js. Producers agree to this version when they join.
+const version = '2026-11-v1';
+const updated = '15 November 2026';
+---
+<Layout title="Producer terms" description="The rules for listing your food or drink business and your deals on Roots & Pantry.">
+  <div class="wrap pagehead">
+    <h1>Producer terms</h1>
+    <p class="sub">The rules for listing your business and your deals on Roots &amp; Pantry. Version {version}, last updated {updated}.</p>
+  </div>
+  <div class="wrap prose">
+    <div class="callout">
+      <p><b>In short:</b> your listing is free. Deals must be at least 10% off or a free item, run for at least 14 days, and be honest. Food and drink only, no health claims, and alcohol is only shown to adults. You can leave at any time.</p>
+    </div>
+
+    <h2 id="about">1. About these terms</h2>
+    <p>These terms are an agreement between you (the business listing on Roots &amp; Pantry) and {site.company}, which runs Roots &amp; Pantry ("we", "us"). You agree to them when you tick the box as you list your business. Our <a href="/privacy-and-terms/">privacy notice</a> explains how we use your information.</p>
+
+    <h2 id="who">2. Who can join</h2>
+    <ul>
+      <li>Independent food and drink businesses in the UK: farms, makers, bakers, market traders and independent shops.</li>
+      <li>The person signing up must be 18 or over, and allowed to act for the business.</li>
+      <li>Your business must be registered with your local council as a food business where the law requires it, and must follow food safety and hygiene law.</li>
+      <li>If you sell alcohol, you must hold the licences the law requires.</li>
+    </ul>
+    <p>Non-food businesses can't list. <a href={contact('Listing my business')}>Talk to us</a> about sponsored spots instead.</p>
+
+    <h2 id="listing">3. Your listing</h2>
+    <ul>
+      <li>Every listing is free, and your basic listing will stay free.</li>
+      <li>We check every new listing by hand before it goes live. We may decline a listing. If we do, we'll tell you why.</li>
+      <li>Keep your details accurate and up to date. You can change them in your dashboard at any time.</li>
+      <li>Your phone number and full postcode are never shown publicly. The <a href="/privacy-and-terms/#what">privacy notice</a> lists what is shown.</li>
+      <li>Only add text, links and (later) photos that you have the right to use.</li>
+      <li>You let us show your listing and deals on our website, in the app and in our own promotion, such as social media posts about local producers. This permission is free, and it ends when you remove your listing. Posts already published can stay up.</li>
+    </ul>
+
+    <h2 id="deals">4. Deal rules</h2>
+    <p>Every deal must:</p>
+    <ol>
+      <li><b>Be worth having:</b> at least 10% off, or a free item.</li>
+      <li><b>Run for at least 14 days.</b> If you need to end a deal early (for example, you've sold out), end it in your dashboard straight away.</li>
+      <li><b>Work:</b> codes must work for the whole time the deal runs, and staff at your shop or stall should know about the deal.</li>
+      <li><b>Be honest:</b> the discount must be off your normal price. Don't raise prices before a deal, or describe a deal in a way that could mislead.</li>
+      <li><b>Be food or drink</b> (or a hamper or box of mostly food or drink).</li>
+      <li><b>Make no health claims:</b> don't say a product cures, prevents or treats anything, "boosts immunity", "detoxes" and so on. Food advertising rules (the CAP Code) don't allow these.</li>
+      <li><b>List allergens accurately</b> where you give them. We always tell families to check the label too.</li>
+      <li><b>Be marked if it includes alcohol.</b> We only show alcohol deals to adults.</li>
+    </ol>
+    <p>You can have up to 10 deals running at once. Each deal can run for up to a year, and you can renew it.</p>
+
+    <h2 id="selling">5. Selling to families</h2>
+    <ul>
+      <li>When a family uses your deal, they buy from you, not from us. Your normal terms of sale apply, and you're responsible for your products, delivery, refunds and consumer law.</li>
+      <li>We don't take payments or commission, and we can't guarantee how many families will use your deals.</li>
+    </ul>
+
+    <h2 id="us">6. What we do</h2>
+    <ul>
+      <li>Show your listing in our public directory, and show your deals to families near you once the family app opens.</li>
+      <li>Give you a dashboard to manage your listing and deals, plus a promote kit (QR code, poster, postcard and Facebook post).</li>
+      <li>Give you totals of how families use your deals. We'll never give you their names, email addresses or other details.</li>
+      <li>Never sell your information.</li>
+    </ul>
+    <p>Optional paid extras may come later. They'll always be clearly labelled, and you'll never have to buy one. A thank-you tip is voluntary: it doesn't change how your listing or deals are shown.</p>
+
+    <h2 id="moderation">7. If something goes wrong</h2>
+    <ul>
+      <li>If a deal or listing breaks these terms, or families report a problem, we may pause your listing or end a deal. We'll email you to say why.</li>
+      <li>If you disagree, reply to that email and we'll look at it again.</li>
+      <li>We may remove a listing straight away if it's unsafe, unlawful or seriously misleading.</li>
+    </ul>
+
+    <h2 id="leaving">8. Leaving</h2>
+    <p>You can stop at any time. End your deals in your dashboard, and email <a href={`mailto:${site.email}`}>{site.email}</a> to remove your listing. We'll remove it within 30 days, and usually much sooner. Your public page will then say you've left Roots &amp; Pantry. We can also end this agreement by giving you 30 days' notice by email, or straight away under section 7.</p>
+
+    <h2 id="liability">9. Responsibility</h2>
+    <ul>
+      <li>Roots &amp; Pantry is a free service. We do our best to keep it running and accurate, but we can't promise it will always be available or error-free.</li>
+      <li>We're not responsible for lost sales, profits or business opportunities.</li>
+      <li>You're responsible for your products, deals and listing, and for any claims that arise from them.</li>
+      <li>Nothing in these terms limits liability for death or personal injury caused by negligence, for fraud, or for anything else the law doesn't allow to be limited.</li>
+    </ul>
+
+    <h2 id="changes">10. Changes</h2>
+    <p>We'll email you at least 30 days before any important change to these terms. If you don't agree with a change, you can remove your listing before it takes effect.</p>
+
+    <h2 id="law">11. Law</h2>
+    <p>These terms are governed by the law of England and Wales. Any dispute will go to the courts of England and Wales, unless you're based in Scotland or Northern Ireland, in which case you can use your local courts.</p>
+
+    <h2 id="contact">Questions</h2>
+    <p>Email <a href={`mailto:${site.email}`}>{site.email}</a> or use our <a href={contact('Listing my business')}>contact form</a>.</p>
+  </div>
+</Layout>

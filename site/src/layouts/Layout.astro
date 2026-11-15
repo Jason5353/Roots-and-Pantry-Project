@@ -16,6 +16,7 @@ const indexable = import.meta.env.PUBLIC_INDEX === 'yes';
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const nav = [
   ['/how-it-works/', 'How it works', 'how'],
+  [`${site.app}/producers`, 'Find producers', 'find'],
   ['/for-producers/', 'For producers', 'producers'],
   ['/about/', 'About', 'about'],
   ['/faq/', 'FAQ', 'faq'],
@@ -77,6 +78,7 @@ const year = new Date().getFullYear();
       </div>
       <nav class="fcol" aria-label="Footer">
         <a href="/how-it-works/">How it works</a>
+        <a href={`${site.app}/producers`}>Find producers</a>
         <a href="/for-producers/">For producers</a>
         <a href="/about/">About</a>
         <a href="/faq/">FAQ</a>
@@ -84,6 +86,7 @@ const year = new Date().getFullYear();
         <a href="/contact/">Contact</a>
         <a href="/accessibility/">Accessibility</a>
         <a href="/privacy-and-terms/">Privacy &amp; terms</a>
+        <a href="/producer-terms/">Producer terms</a>
       </nav>
       <div class="fcol small">
         <p>Roots &amp; Pantry is a trading name of <a href={site.companyUrl}>{site.company}</a>, registered in England and Wales, company number {site.companyNumber}.</p>

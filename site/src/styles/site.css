@@ -203,3 +203,11 @@ footer.site a { color: var(--ink) }
   .vstrip .dup { display: none }
 }
 @media (max-width: 560px) { .me { width: 150px; margin-left: 16px } .me figcaption { font-size: 1.05rem } }
+
+/* producer tip */
+.tip { display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: center; box-shadow: 5px 5px 0 var(--yolk) }
+.tip h2 { font-size: 1.6rem; letter-spacing: -.02em }
+.tip-qr { margin: 0; text-align: center }
+.tip-qr img { width: 200px; height: 200px; background: #fff; border: 2px solid var(--ink); border-radius: 14px; padding: 6px }
+.tip-qr figcaption { font-size: .9rem; color: var(--ink-soft); margin-top: 8px }
+@media (max-width: 900px) { .tip { grid-template-columns: 1fr } .tip-qr img { margin: 0 auto } }

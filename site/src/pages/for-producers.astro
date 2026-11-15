@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { site, mail } from '../data/site.js';
+import { site, mail, contact } from '../data/site.js';
 const counties = [
   ['Shropshire', 'Signing up now'],
   ['Staffordshire', 'Coming soon'],
@@ -18,10 +18,10 @@ const counties = [
         <h1>Reach local families <span class="l2">when they plan what to cook.</span></h1>
         <p class="lead">Families keep their recipes and shopping lists in Roots &amp; Pantry. When a recipe needs something you make or sell, your deal appears right beside it.</p>
         <div class="btns">
-          <a class="btn btn-green" href={mail('Listing my business on Roots & Pantry')}>Register your interest</a>
+          <a class="btn btn-green" href={`${site.app}/signin?next=/producer/join`}>List your business</a>
           <a class="btn btn-ghost" href={site.demoProducers}>See the producer demo</a>
         </div>
-        <p class="note">Self-service sign-up opens soon. Email <b>hello@rootsandpantry.co.uk</b> now to be one of the first Shropshire producers listed.</p>
+        <p class="note">Sign in with your email, add your details, and we'll check your listing by hand. Questions? <a href={`${site.app}/contact`}>Contact us</a>.</p>
       </div>
       <div class="collage" aria-hidden="true">
         <figure class="snap s1"><img src="/img/farmers-market.webp" alt="" width="800" height="1000" loading="eager" /><figcaption>Market day</figcaption></figure>
@@ -48,7 +48,7 @@ const counties = [
       <div class="panel">
         <h2>What you get</h2>
         <ul class="ticks">
-          <li><b>A free listing</b> in our public directory, with your story, where to find you and a map.</li>
+          <li><b>A free listing</b> in our public directory, with your story and where to find you. Families search it by postcode or county.</li>
           <li><b>Your deal beside matching recipes</b> and shopping lists, for families near you.</li>
           <li><b>A simple dashboard</b> with monthly views, taps and "I used this" counts by town.</li>
           <li><b>A promote kit:</b> a printable poster and postcard with your QR code, plus a ready-made Facebook post.</li>
@@ -59,12 +59,13 @@ const counties = [
         <h2>The few rules</h2>
         <ul class="ticks">
           <li>Food and drink only.</li>
-          <li>Deals are at least 10% off or a free item, and run for at least 30 days.</li>
+          <li>Deals are at least 10% off or a free item, and run for at least 14 days.</li>
           <li>Codes must work, and offers must be honest.</li>
           <li>No health claims.</li>
           <li>Alcohol deals are only shown to adults.</li>
         </ul>
-        <p class="note">Selling non-food items? <a href={mail('Sponsored spots on Roots & Pantry')}>Talk to us</a> about sponsored spots.</p>
+        <p>Read the full <a href="/producer-terms/">producer terms</a>.</p>
+        <p class="note">Selling non-food items? <a href={contact('Something else')}>Talk to us</a> about sponsored spots.</p>
       </div>
     </div>
   </section>
@@ -74,7 +75,7 @@ const counties = [
     <div class="wrap two">
       <div>
         <h2 class="sec">Where we are</h2>
-        <p class="sub">We're starting in Shropshire. A public directory of local producers opens here soon, so families can browse by county.</p>
+        <p class="sub">We're starting in Shropshire. Families can find you in our <a href={`${site.app}/producers`}>public directory</a>, by distance from their postcode or by county.</p>
         <ul class="counties">
           {counties.map(([name, status], i) => <li class={i === 0 ? 'live' : ''}>{name}: {status}</li>)}
         </ul>
@@ -83,8 +84,7 @@ const counties = [
       <div class="panel">
         <h2>Know a great local producer?</h2>
         <p>Tell us who they are and we'll get in touch with them.</p>
-        <div class="btns"><a class="btn btn-ghost" href={mail('Nominate a producer')}>Nominate a producer</a></div>
-        <p class="note">Email link not opening? Write to <b>hello@rootsandpantry.co.uk</b></p>
+        <div class="btns"><a class="btn btn-ghost" href={contact('Nominate a producer')}>Nominate a producer</a></div>
       </div>
     </div>
   </section>
@@ -102,8 +102,27 @@ const counties = [
       </div>
       <div class="panel">
         <h2>Join the first wave</h2>
-        <p>We're building the Shropshire directory now, ready for families when sign-up opens. Send us your business name, what you make, and where families can find you.</p>
-        <div class="btns"><a class="btn btn-green" href={mail('Listing my business on Roots & Pantry')}>Email {site.email}</a></div>
+        <p>We're building the Shropshire directory now, ready for families when sign-up opens. It takes about five minutes.</p>
+        <div class="btns"><a class="btn btn-green" href={`${site.app}/signin?next=/producer/join`}>List your business</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="panel tip" id="tip">
+        <div>
+          <h2>Pay it forward: a £5 thank-you</h2>
+          <p>Roots &amp; Pantry is free and run on goodwill. If it sends customers your way and you feel it's earned it, you can leave a one-off <b>£5 thank-you</b>.</p>
+          <ul class="ticks">
+            <li><b>Entirely voluntary.</b> Your listing stays exactly the same whether you tip or not.</li>
+            <li><b>No invoices, no reminders.</b> Tip whenever you think it's deserved.</li>
+            <li><b>It keeps the lights on:</b> hosting, and time spent signing up more local families.</li>
+          </ul>
+          <p><a class="btn btn-red" href="https://checkout.revolut.com/pay/c6e458e4-580c-49fc-8822-d346ed2a216c" rel="noopener noreferrer">Leave a £5 thank-you</a></p>
+          <p class="note">Secure payment by card, Apple Pay or Google Pay through Revolut.</p>
+        </div>
+        <figure class="tip-qr"><img src="/img/tip-qr.svg" alt="QR code to leave a £5 thank-you through Revolut" width="200" height="200" loading="lazy" /><figcaption>Or scan with your phone</figcaption></figure>
       </div>
     </div>
   </section>
