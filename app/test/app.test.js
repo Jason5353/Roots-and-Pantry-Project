@@ -27,6 +27,11 @@ describe('basics', () => {
     expect(r.headers.get('X-Robots-Tag')).toContain('noindex');
     expect(await r.text()).toContain('List my business');
   });
+  it('redirects plain http to https on our domain', async () => {
+    const r = await exports.default.fetch(new Request('http://app.rootsandpantry.co.uk/producers?near=TF1', { redirect: 'manual' }));
+    expect(r.status).toBe(301);
+    expect(r.headers.get('Location')).toBe('https://app.rootsandpantry.co.uk/producers?near=TF1');
+  });
   it('returns 404 for unknown pages', async () => expect((await get('/nope')).status).toBe(404));
   it('rejects cross-site posts', async () => {
     const r = await post('/contact', { name: 'x' }, { Origin: 'https://evil.example', 'Sec-Fetch-Site': 'cross-site' });

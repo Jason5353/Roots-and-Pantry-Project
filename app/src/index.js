@@ -26,6 +26,11 @@ function notFound(env, user) {
 
 async function handle(request, env, ctx) {
   const url = new URL(request.url);
+  // Never serve the real app over plain HTTP: send visitors to the https:// address.
+  if (url.protocol === 'http:' && url.hostname.endsWith('rootsandpantry.co.uk')) {
+    url.protocol = 'https:';
+    return Response.redirect(url.toString(), 301);
+  }
   if (env.DEV === 'true' && url.hostname.endsWith('rootsandpantry.co.uk')) {
     return new Response('Misconfigured: DEV mode is not allowed here', { status: 500 });
   }
