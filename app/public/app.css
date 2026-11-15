@@ -23,7 +23,7 @@ header.site .wrap { display: flex; align-items: center; gap: 20px; min-height: 7
 .logo .mark { width: 40px; height: 40px; border-radius: 11px; background: var(--basil); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 15px }
 .logo .word { font-weight: 800; font-size: 1.4rem; letter-spacing: -.02em }
 .logo .amp { color: var(--pepper) }
-nav.main { margin-left: auto; display: flex; gap: 20px; align-items: center }
+nav.main { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 20px; align-items: center }
 nav.main a { font-weight: 600; text-decoration: none; padding: 10px 0 }
 nav.main a:hover { text-decoration: underline }
 form.inline { display: inline-flex; margin: 0 }
@@ -110,7 +110,7 @@ ul.plain li:first-child { border-top: 0 }
 /* admin */
 .admin { max-width: 960px }
 .adminnav { display: flex; flex-wrap: wrap; gap: 6px 22px; border-bottom: 2px solid var(--line); margin: -16px 0 28px; padding-bottom: 8px }
-.adminnav a, .tabs a { font-weight: 700; text-decoration: none; padding: 10px 0; min-height: 44px; display: inline-flex; align-items: center }
+.adminnav a, .tabs a { font-weight: 700; text-decoration: none; padding: 10px 0; min-height: 44px; min-width: 44px; display: inline-flex; align-items: center }
 .adminnav a:hover, .tabs a:hover { text-decoration: underline }
 .tabs { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0 0 12px }
 .tabs a[aria-current=page] { text-decoration: underline; text-decoration-thickness: 3px; color: var(--basil) }
@@ -164,3 +164,4 @@ ul.countylist a { display: inline-block; padding: 8px 0 }
 .pop-title { font-weight: 800; margin: 0 0 6px; padding-right: 30px }
 .maplibregl-ctrl-group button { width: 44px; height: 44px }
 @media (prefers-reduced-motion: reduce) { .maplibregl-popup, .maplibregl-marker { transition: none !important } }
+.maplibregl-ctrl-attrib a { display: inline-block; min-height: 24px; line-height: 24px }

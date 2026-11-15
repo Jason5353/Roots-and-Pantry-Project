@@ -121,7 +121,7 @@ describe('producer sign-up', () => {
     expect(p.status).toBe('pending');
     expect(p.postcode).toBe('TF1 2EB');
     expect(p.facebook).toBe('https://www.facebook.com/wrekindairy');
-    expect(p.terms_version).toBe('2026-11-draft-3');
+    expect(p.terms_version).toBe('2026-11-v1');
     expect((await outbox('hello@rootsandpantry.co.uk')).some((m) => m.subject.includes('Wrekin Dairy'))).toBe(true);
     expect((await outbox('farm@example.com')).some((m) => m.subject.includes('Thanks for joining'))).toBe(true);
     r = await get('/producer', { Cookie: cookie });

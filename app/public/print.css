@@ -24,4 +24,5 @@
   .print-tools { display: none }
   .sheet { box-shadow: none; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact }
 }
-@media screen and (max-width: 820px) { .poster .sheet { transform: scale(.45); transform-origin: top center; margin-bottom: -160mm } .postcard .sheet { transform: scale(.85); transform-origin: top center } }
+/* Small screens: shrink the preview only (zoom changes layout size too, so no sideways scrolling). Printing is unaffected. */
+@media screen and (max-width: 820px) { .poster .sheet { zoom: .45 } .postcard .sheet { zoom: .85 } }

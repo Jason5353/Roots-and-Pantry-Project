@@ -13,7 +13,7 @@ export default defineConfig(async () => {
             DEV: 'true',
             TURNSTILE_SECRET: 'unused-in-dev',
             BREVO_API_KEY: 'unused-in-dev',
-            CODE_PEPPER: 'test-pepper',
+            CODE_PEPPER: 'test-pepper-0123456789-0123456789-abc',
           },
         },
       }),

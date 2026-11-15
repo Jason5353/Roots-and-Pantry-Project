@@ -29,6 +29,10 @@ async function handle(request, env, ctx) {
   if (env.DEV === 'true' && url.hostname.endsWith('rootsandpantry.co.uk')) {
     return new Response('Misconfigured: DEV mode is not allowed here', { status: 500 });
   }
+  // Sign-in codes are hashed with CODE_PEPPER: never run with a missing or weak one.
+  if (!env.CODE_PEPPER || env.CODE_PEPPER.length < 32) {
+    return new Response('Misconfigured: set the CODE_PEPPER secret (32+ characters)', { status: 503 });
+  }
   // Map tiles: many small requests, no session needed, so skip the database.
   if (url.pathname === '/tiles/uk.pmtiles' && (request.method === 'GET' || request.method === 'HEAD')) return tiles(request, env, ctx);
   const user = await loadUser(request, env);

@@ -4,7 +4,7 @@ import { page, turnstileWidget, errorList, field, select } from './layout.js';
 import { verifyTurnstile, sendEmail, rateLimit, audit } from './services.js';
 import { getProducer, makeSlug } from './producer.js';
 
-export const TERMS_VERSION = '2026-11-draft-3'; // full producer terms page; 18+ confirmation (site/src/pages/producer-terms.astro)
+export const TERMS_VERSION = '2026-11-v1'; // approved by Jason 15 Nov 2026; full text site/src/pages/producer-terms.astro
 
 export { COUNTIES } from './data.js';
 import { COUNTIES } from './data.js';
