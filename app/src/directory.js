@@ -6,7 +6,7 @@ import { page } from './layout.js';
 import { COUNTIES } from './data.js';
 import { todayUK } from './producer.js';
 
-export const RADII = [10, 25, 50];
+export const RADII = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50];
 const DEFAULT_MILES = 25;
 export const LOCAL_DELIVERY_MILES = 15; // what "local delivery only" counts as
 
@@ -130,7 +130,7 @@ export async function directory(request, env, user, url) {
       body: html`${searchForms(env, { near: here.outcode, miles })}
         <section aria-labelledby="near-h">
           <h2 id="near-h">${nearby.length} ${nearby.length === 1 ? 'producer' : 'producers'} within ${miles} miles of ${place}</h2>
-          ${nearby.length + delivers.length ? html`<p><a class="btn btn-ghost btn-sm" href="/producers/map?near=${here.outcode}&amp;miles=${miles}">Show on a map</a></p>` : ''}
+          <p><a class="btn btn-ghost btn-sm" href="/producers/map?near=${here.outcode}&amp;miles=${miles}">Show on a map</a></p>
           ${nearby.length ? html`<ul class="pcards">${nearby.map((p) => card(p, { miles: p.miles }))}</ul>` : html`<p>None yet.${miles < 50 ? ' Try a bigger distance.' : ''}</p>${nominate(env)}`}
         </section>
         ${delivers.length ? html`<section aria-labelledby="del-h">
@@ -147,7 +147,7 @@ export async function directory(request, env, user, url) {
       body: html`${searchForms(env, { county })}
         <section aria-labelledby="county-h">
           <h2 id="county-h">${list.length} ${list.length === 1 ? 'producer' : 'producers'} in ${county}</h2>
-          ${list.length ? html`<p><a class="btn btn-ghost btn-sm" href="/producers/map?county=${encodeURIComponent(county)}">Show on a map</a></p>` : ''}
+          <p><a class="btn btn-ghost btn-sm" href="/producers/map?county=${encodeURIComponent(county)}">Show on a map</a></p>
           ${list.length ? html`<ul class="pcards">${list.map((p) => card(p))}</ul>` : html`<p>No producers here yet.</p>${nominate(env)}`}
         </section>`,
     });
@@ -159,6 +159,7 @@ export async function directory(request, env, user, url) {
     body: html`${searchForms(env, { near: nearRaw.slice(0, 10), miles, error: near?.invalid ? 'Enter a postcode like TF1 2EB, or a district like TF1' : '' })}
       <section aria-labelledby="where-h">
         <h2 id="where-h">Where we have producers</h2>
+        <p><a class="btn btn-ghost btn-sm" href="/producers/map">See them all on a map</a></p>
         ${counts.length ? html`<ul class="countylist">${counts.map((c) => html`<li><a href="/producers?county=${encodeURIComponent(c.county)}">${c.county}</a> (${c.n})</li>`)}</ul>` : html`<p>We're just getting started in Shropshire.</p>`}
         ${nominate(env)}
       </section>`,

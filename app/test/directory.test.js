@@ -75,6 +75,16 @@ describe('directory page', () => {
     expect(t.indexOf('Wellington Bakery')).toBeLessThan(t.indexOf('Shrewsbury Cheese'));
   });
 
+  it('offers 5-mile steps and always links to the map', async () => {
+    let t = await (await get('/producers?near=TF1&miles=5')).text();
+    expect(t).toContain('within 5 miles of TF1');
+    expect(t).toContain('<option value="35" >Within 35 miles</option>');
+    t = await (await get('/producers?near=ZE1&miles=5')).text();
+    expect(t).toContain('0 producers within 5 miles');
+    expect(t).toContain('/producers/map?near=ZE1&amp;miles=5');
+    expect(await (await get('/producers')).text()).toContain('See them all on a map');
+  });
+
   it('browses by county, approved producers only', async () => {
     const t = await (await get('/producers?county=Shropshire')).text();
     expect(t).toContain('2 producers in Shropshire');
