@@ -19,7 +19,7 @@ Full decisions: the claude.ai project doc "Public app – decisions and plan".
 
 ## Hosting
 - Cloudflare account **"Roots and Pantry Site"** (separate from BMS and the Lewis family site; never touch those).
-- Pages project **`roots-and-pantry-project`** for `site/`: root directory `site`, build `npm run build`, output `dist`, `NODE_VERSION=22`. `main` = production (https://roots-and-pantry-project.pages.dev), `test` = preview (https://test.roots-and-pantry-project.pages.dev). Custom domain not attached until launch.
+- Pages project **`roots-and-pantry-project`** for `site/`: root directory `site`, build `npm run build`, output `dist`, `NODE_VERSION=22`. `main` = production, custom domains **rootsandpantry.co.uk** and www (www redirects to the root via a Redirect Rule; www DNS is a placeholder), `test` = preview (https://test.roots-and-pantry-project.pages.dev).
 - Domains: `rootsandpantry.co.uk` (main), `rootsandpantry.uk` (redirect to .co.uk, never sends email).
 - Email: `hello@rootsandpantry.co.uk` only → Cloudflare Email Routing → admin@bmscyberdefence.co.uk. App email via Brevo (EU). Brevo always adds an open pixel + List-Unsubscribe header; sign-in code emails must be plain text with no links.
 
@@ -31,7 +31,7 @@ Stage 1 (now): public site + producer sign-up/dashboard + admin. Family app open
 Food and drink only; deals at least 10% off or a free item, running at least **14 days**; codes must work; honest offers; no health claims; alcohol shown to 18+ only. Non-food sellers → sponsored spots. Voluntary £5 Revolut tip on /for-producers/.
 
 ## Working rules
-- **Test first.** Work on `test`, Jason checks the preview URL, then merge to `main`.
+- **Test first.** Work on `test`, Jason checks the preview URL, then merge to `main`. **Live since 15 Nov 2026:** pushing to `main` deploys the public site and the live app `rp-app` (Workers Builds, branch main, root /app, deploy = `npx wrangler d1 migrations apply DB --remote && npx wrangler deploy`; its own runtime secrets incl. a different CODE_PEPPER). Search indexing still off until Jason chooses launch day (`PUBLIC_INDEX=yes`).
 - `cd site && npm run build && npm test` before every push. `npm test` runs axe-core (WCAG 2.2 AA) at desktop and phone widths, checks the CSP (no inline scripts or `style=` attributes), sideways scrolling and internal links. Needs Chrome (`CHROME_PATH`).
 - **WCAG 2.2 AA is a hard requirement.** Yolk (#FFC93C) never for text on white. Visible focus, 44px tap targets, reduced-motion respected, captions on videos.
 - **Strict CSP** in `site/public/_headers`: no inline styles/scripts, no third-party fonts or embeds (fonts are self-hosted via @fontsource). Only exception: Cloudflare Web Analytics beacon.
