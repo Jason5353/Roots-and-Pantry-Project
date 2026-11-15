@@ -2,19 +2,12 @@
 import { html, now, randomId, clean, normEmail, validEmail, validUrl, normPostcode, sha256 } from './util.js';
 import { page, turnstileWidget, errorList, field, select } from './layout.js';
 import { verifyTurnstile, sendEmail, rateLimit, audit } from './services.js';
+import { getProducer, makeSlug } from './producer.js';
 
 export const TERMS_VERSION = '2026-11-draft-2'; // 14-day minimum deal length
 
-export const COUNTIES = [
-  'Bedfordshire', 'Berkshire', 'Bristol', 'Buckinghamshire', 'Cambridgeshire', 'Cheshire', 'Cornwall', 'Cumbria', 'Derbyshire', 'Devon',
-  'Dorset', 'Durham', 'East Riding of Yorkshire', 'East Sussex', 'Essex', 'Gloucestershire', 'Greater London', 'Greater Manchester', 'Hampshire',
-  'Herefordshire', 'Hertfordshire', 'Isle of Wight', 'Kent', 'Lancashire', 'Leicestershire', 'Lincolnshire', 'Merseyside', 'Norfolk',
-  'North Yorkshire', 'Northamptonshire', 'Northumberland', 'Nottinghamshire', 'Oxfordshire', 'Rutland', 'Shropshire', 'Somerset',
-  'South Yorkshire', 'Staffordshire', 'Suffolk', 'Surrey', 'Tyne and Wear', 'Warwickshire', 'West Midlands', 'West Sussex',
-  'West Yorkshire', 'Wiltshire', 'Worcestershire',
-  'Clwyd', 'Dyfed', 'Gwent', 'Gwynedd', 'Mid Glamorgan', 'Powys', 'South Glamorgan', 'West Glamorgan',
-  'Scotland', 'Northern Ireland',
-];
+export { COUNTIES } from './data.js';
+import { COUNTIES } from './data.js';
 
 const TOPICS = ['General question', 'Listing my business', 'Nominate a producer', 'Press', 'Report a problem', 'Accessibility', 'Something else'];
 
@@ -139,41 +132,6 @@ function joinForm(env, user, { values = {}, errors = [] } = {}) {
   });
 }
 
-async function getProducer(env, userId) {
-  return env.DB.prepare('SELECT * FROM producers WHERE user_id = ?').bind(userId).first();
-}
-
-export async function producerHome(request, env, user) {
-  const p = await getProducer(env, user.id);
-  if (!p) return Response.redirect(new URL('/producer/join', request.url), 303);
-  const status = {
-    pending: ['Waiting for approval', 'Thanks! We check every listing by hand and will email you when it goes live. Deals come next.'],
-    approved: ['Live', 'Your listing is approved. Adding deals is coming very soon.'],
-    rejected: ['Not approved', "We couldn't approve this listing. We've emailed you the reason. Reply to that email if you'd like to talk."],
-    suspended: ['Suspended', "Your listing is paused. We've emailed you the reason. Reply to that email to appeal."],
-  }[p.status] || ['Unknown', ''];
-  return page(env, {
-    title: 'My listing',
-    user,
-    body: html`<div class="narrow">
-      <h1>${p.business_name}</h1>
-      <p class="status status-${p.status}"><b>Status:</b> ${status[0]}</p>
-      <p>${status[1]}</p>
-      <section class="panel">
-        <h2>Your details</h2>
-        <dl class="details">
-          <dt>Contact</dt><dd>${p.contact_name}, ${user.email}, ${p.phone}</dd>
-          <dt>Location</dt><dd>${p.postcode}, ${p.county}</dd>
-          <dt>Website</dt><dd>${p.website || 'None'}</dd>
-          <dt>Facebook</dt><dd>${p.facebook || 'None'}</dd>
-          <dt>About</dt><dd>${p.description}</dd>
-        </dl>
-        <p class="note">Need to change something? <a href="/contact?topic=Listing%20my%20business">Contact us</a> for now. Editing is coming soon.</p>
-      </section>
-    </div>`,
-  });
-}
-
 export async function getJoin(request, env, user) {
   if (await getProducer(env, user.id)) return Response.redirect(new URL('/producer', request.url), 303);
   if (env.PRODUCER_SIGNUP_OPEN !== 'true') return page(env, { title: 'Opening soon', user, body: html`<div class="narrow"><h1>Producer sign-up opens soon</h1><p>Email hello@rootsandpantry.co.uk to register your interest.</p></div>` });
@@ -211,10 +169,11 @@ export async function postJoin(request, env, user, form) {
 
   const t = now();
   const id = randomId();
+  const slug = await makeSlug(env, v.business_name, id);
   await env.DB.prepare(
-    `INSERT INTO producers (id, user_id, business_name, contact_name, phone, website, facebook, postcode, county, description, hygiene_link, status, terms_version, terms_accepted_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
-  ).bind(id, user.id, v.business_name, v.contact_name, v.phone, v.website || null, v.facebook || null, pc, v.county, v.description, v.hygiene_link || null, TERMS_VERSION, t, t, t).run();
+    `INSERT INTO producers (id, user_id, slug, business_name, contact_name, phone, website, facebook, postcode, county, description, hygiene_link, status, terms_version, terms_accepted_at, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
+  ).bind(id, user.id, slug, v.business_name, v.contact_name, v.phone, v.website || null, v.facebook || null, pc, v.county, v.description, v.hygiene_link || null, TERMS_VERSION, t, t, t).run();
   await audit(env, user.id, 'producer.created', id, { business: v.business_name, county: v.county });
   await sendEmail(env, {
     to: env.NOTIFY_EMAIL,

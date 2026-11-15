@@ -15,5 +15,8 @@
     "@fontsource/caveat": "5.3.0",
     "vitest": "4.1.12",
     "wrangler": "4.162.0"
+  },
+  "dependencies": {
+    "qrcode-generator": "^2.0.4"
   }
 }

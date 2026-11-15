@@ -69,3 +69,40 @@ dl.details dt { font-weight: 700 } dl.details dd { margin: 0; overflow-wrap: any
 footer.site { border-top: 1px solid var(--line); color: var(--ink-soft); font-size: .95rem; padding: 24px 0 }
 footer.site a { color: var(--ink) }
 @media (max-width: 700px) { .cards { grid-template-columns: 1fr } dl.details { grid-template-columns: 1fr } .logo .word { font-size: 1.15rem } }
+
+/* producer dashboard */
+.dash { max-width: 900px }
+.flash { background: var(--basil-soft); border-left: 6px solid var(--basil); border-radius: 12px; padding: 12px 18px; margin: 0 0 20px; font-weight: 700 }
+.panel { margin: 0 0 20px }
+.panelhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap }
+.panelhead h2 { margin: 0 }
+.btns { display: flex; gap: 10px; flex-wrap: wrap }
+.btn-sm { min-height: 44px; padding: 8px 16px; font-size: .95rem }
+ul.deals { list-style: none; padding: 0; margin: 16px 0 0 }
+.deal { border-top: 1px solid var(--line); padding: 14px 0; display: flex; gap: 14px; justify-content: space-between; flex-wrap: wrap }
+.deal-main { flex: 1 1 320px; min-width: 0 }
+.deal-title, .deal-meta { margin: 0 0 4px }
+.deal-meta { color: var(--ink-soft); font-size: .95rem }
+.deal-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start }
+.deal-actions form { margin: 0 }
+.tag { display: inline-block; font-size: .85rem; font-weight: 700; border-radius: 999px; padding: 3px 10px; background: var(--line); vertical-align: middle }
+.tag-live { background: var(--basil-soft); color: #145234 } .tag-waiting, .tag-scheduled { background: var(--yolk-soft) }
+.tag-paused, .tag-expired, .tag-ended { background: #EEF0F4 } .tag-soon { background: #FDECEA; color: var(--pepper-dark) }
+fieldset.field { border: 0; padding: 0; margin: 0 0 22px }
+fieldset.field.has-error { padding-left: 14px }
+legend { font-weight: 700; margin-bottom: 6px; padding: 0 }
+.radio { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 8px 0 }
+.radio input { width: 26px; height: 26px; margin: 0; accent-color: var(--basil) }
+.radio label { font-weight: 400; margin: 0 }
+.radio .hint { flex-basis: 100%; margin: 0 0 0 38px }
+input[type=date] { width: 100%; font: 400 1.0625rem/1.4 var(--display); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; padding: 10px 14px; min-height: 48px; background: #fff }
+.two-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px }
+.qr svg { display: block; width: 240px; height: 240px; border: 2px solid var(--ink); border-radius: 14px; padding: 6px; background: #fff }
+.label-strong { display: block; font-weight: 700; margin-bottom: 6px }
+.eyebrow { font-weight: 700; color: var(--basil); margin: 0 0 4px; text-transform: uppercase; letter-spacing: .04em; font-size: .9rem }
+ul.plain { list-style: none; padding: 0; margin: 0 }
+ul.plain li { padding: 10px 0; border-top: 1px solid var(--line) }
+ul.plain li:first-child { border-top: 0 }
+.deal-public { border-color: var(--basil); box-shadow: 5px 5px 0 var(--yolk) }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
+@media (max-width: 600px) { .two-dates { grid-template-columns: 1fr } }

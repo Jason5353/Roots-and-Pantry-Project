@@ -2,7 +2,8 @@
 import { html } from './util.js';
 import { page } from './layout.js';
 import { loadUser, getSignin, postSignin, postCode, postSignout } from './auth.js';
-import { home, getContact, postContact, producerHome, getJoin, postJoin } from './pages.js';
+import { home, getContact, postContact, getJoin, postJoin } from './pages.js';
+import { dashboard, getEdit, postEdit, getNewDeal, postNewDeal, getEditDeal, postEditDeal, postDealStatus, postRenew, publicPage, promote, printSheet, sendExpiryReminders } from './producer.js';
 
 const MAX_BODY = 32 * 1024;
 
@@ -50,15 +51,40 @@ async function handle(request, env, ctx) {
     case 'POST /signin': return postSignin(request, env, form);
     case 'POST /signin/code': return postCode(request, env, form);
     case 'POST /signout': return postSignout(request, env, user);
-    case 'GET /producer': return user ? producerHome(request, env, user) : needUser();
+    case 'GET /producer': return user ? dashboard(request, env, user, url) : needUser();
+    case 'GET /producer/edit': return user ? getEdit(request, env, user) : needUser();
+    case 'POST /producer/edit': return user ? postEdit(request, env, user, form) : needUser();
+    case 'GET /producer/deals/new': return user ? getNewDeal(request, env, user) : needUser();
+    case 'POST /producer/deals/new': return user ? postNewDeal(request, env, user, form) : needUser();
+    case 'GET /producer/promote': return user ? promote(request, env, user) : needUser();
+    case 'GET /producer/promote/poster': return user ? printSheet(request, env, user, 'poster') : needUser();
+    case 'GET /producer/promote/postcard': return user ? printSheet(request, env, user, 'postcard') : needUser();
     case 'GET /producer/join': return user ? getJoin(request, env, user) : needUser();
     case 'POST /producer/join': return user ? postJoin(request, env, user, form) : needUser();
     case 'GET /healthz': return new Response('ok', { headers: { 'Cache-Control': 'no-store' } });
-    default: return notFound(env, user);
   }
+
+  // Routes with an id in the path.
+  const m = path.match(/^\/producer\/deals\/([A-Za-z0-9_-]{10,40})\/(edit|status|renew)$/);
+  if (m) {
+    if (!user) return needUser();
+    const [, id, action] = m;
+    let res = null;
+    if (method === 'GET' && action === 'edit') res = await getEditDeal(request, env, user, id);
+    if (method === 'POST' && action === 'edit') res = await postEditDeal(request, env, user, id, form);
+    if (method === 'POST' && action === 'status') res = await postDealStatus(request, env, user, id, form);
+    if (method === 'POST' && action === 'renew') res = await postRenew(request, env, user, id);
+    return res || notFound(env, user);
+  }
+  const pm = path.match(/^\/p\/([a-z0-9-]{1,60})$/);
+  if (pm && method !== 'POST') return (await publicPage(request, env, user, pm[1])) || notFound(env, user);
+  return notFound(env, user);
 }
 
 export default {
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(sendExpiryReminders(env).then((n) => console.log(`expiry reminders sent: ${n}`)));
+  },
   async fetch(request, env, ctx) {
     try {
       return await handle(request, env, ctx);

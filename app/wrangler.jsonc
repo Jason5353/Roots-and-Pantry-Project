@@ -10,6 +10,7 @@
   "workers_dev": false,
   "preview_urls": false,
   "observability": { "enabled": true },
+  "triggers": { "crons": ["0 8 * * *"] },
   "assets": { "directory": "./public", "binding": "ASSETS" },
   "routes": [{ "pattern": "app.rootsandpantry.co.uk", "custom_domain": true }],
   "vars": {
@@ -28,6 +29,7 @@
   "env": {
     "test": {
       "name": "rp-app-test",
+      "triggers": { "crons": ["0 8 * * *"] },
       "routes": [{ "pattern": "test-app.rootsandpantry.co.uk", "custom_domain": true }],
       "vars": {
         "APP_NAME": "Roots & Pantry",
