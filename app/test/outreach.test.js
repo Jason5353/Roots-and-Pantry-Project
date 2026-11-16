@@ -174,6 +174,43 @@ describe('outreach', () => {
     expect(b.producer_id).toBeTruthy();
   });
 
+  it('lets a sole trader ask for details, records permission, and unlocks email for them', async () => {
+    expect((await get('/producers/interest')).status).toBe(200);
+    // No tick, no record.
+    const r0 = await post('/producers/interest', { contact_name: 'Meg', business_name: 'Meg\'s Bakes', email: 'meg@example.com', 'cf-turnstile-response': 'dev-pass' });
+    expect(r0.status).toBe(400);
+    expect(await item("Meg's Bakes")).toBeNull();
+    // Facebook box needs a Facebook page.
+    expect((await post('/producers/interest', { contact_name: 'Meg', business_name: "Meg's Bakes", email: 'meg@example.com', consent_email: 'yes', consent_facebook: 'yes', 'cf-turnstile-response': 'dev-pass' })).status).toBe(400);
+    const r = await post('/producers/interest', { contact_name: 'Meg Price', business_name: "Meg's Bakes", email: 'Meg@Example.com', town: 'Bridgnorth', county: 'Shropshire', consent_email: 'yes', 'cf-turnstile-response': 'dev-pass' });
+    expect(r.status).toBe(200);
+    expect(await r.text()).toContain("Thanks, we'll be in touch");
+    const m = await item("Meg's Bakes");
+    expect(m.consent_email_at).toBeTruthy();
+    expect(m.consent_facebook_at).toBeNull();
+    expect(m.consent_how).toContain('Yes, email me about joining Roots & Pantry');
+    expect(m.stage).toBe('contacted');
+    expect(m.contact_count).toBe(1);
+    expect((await outbox('meg@example.com'))[0].subject).toBe('How Roots & Pantry works for producers');
+    expect((await outbox(OWNER))[0].subject).toBe("[Producer enquiry] Meg's Bakes");
+    // Mark her as a sole trader: the follow-up email is still allowed, because she asked.
+    await env.DB.prepare("UPDATE outreach SET kind = 'sole', follow_up_on = ? WHERE id = ?").bind(today(), m.id).run();
+    const mp = await (await get(`/admin/outreach/${m.id}`, { Cookie: owner })).text();
+    expect(mp).toContain('id="emailtext"');
+    expect(mp).toContain('They asked us to email them on');
+    expect(mp).not.toContain('id="fbtext"');
+    // Asking again updates the same record rather than adding a new one.
+    await post('/producers/interest', { contact_name: 'Meg Price', business_name: "Meg's Bakes", email: 'meg@example.com', facebook: 'https://www.facebook.com/megsbakes', consent_email: 'yes', consent_facebook: 'yes', 'cf-turnstile-response': 'dev-pass' });
+    const again = await env.DB.prepare("SELECT COUNT(*) AS n, MAX(consent_facebook_at) AS fb FROM outreach WHERE email = 'meg@example.com'").first();
+    expect(again.n).toBe(1);
+    expect(again.fb).toBeTruthy();
+    // "Not interested" withdraws the permission.
+    await post(`/admin/outreach/${m.id}/stage`, { stage: 'not_interested' }, { Cookie: owner });
+    const gone = await item("Meg's Bakes");
+    expect(gone.consent_email_at).toBeNull();
+    expect(gone.consent_facebook_at).toBeNull();
+  });
+
   it('deletes a record on request, and old records in the daily clean-up', async () => {
     const h = await item('Ludlow Honey');
     await post(`/admin/outreach/${h.id}/delete`, {}, { Cookie: owner });
@@ -181,6 +218,6 @@ describe('outreach', () => {
     await env.DB.prepare('UPDATE outreach SET updated_at = 1').run();
     await cleanUp(env);
     const left = await env.DB.prepare('SELECT business_name, stage FROM outreach').all();
-    expect(left.results).toEqual([{ business_name: 'Wrekin Valley Butchers', stage: 'not_interested' }]);
+    expect(left.results.map((x) => x.business_name).sort()).toEqual(["Meg's Bakes", 'Wrekin Valley Butchers']);
   });
 });

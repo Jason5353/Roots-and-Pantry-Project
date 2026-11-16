@@ -2,7 +2,7 @@
 import { html } from './util.js';
 import { page } from './layout.js';
 import { loadUser, getSignin, postSignin, postCode, postSignout, isAdmin } from './auth.js';
-import { outreachList, getNewItem, postNewItem, outreachItem, getEditItem, postEditItem, postContacted, postStage, postNote, postDelete, letter, getImport, postImport, csvTemplate, outreachDaily } from './outreach.js';
+import { outreachList, getNewItem, postNewItem, outreachItem, getEditItem, postEditItem, postContacted, postStage, postNote, postDelete, letter, getImport, postImport, csvTemplate, outreachDaily, getInterest, postInterest } from './outreach.js';
 import { adminGate, getConfirm, postConfirmSend, postConfirm, overview, producerList, producerDetail, postProducerStatus, postEndDeal, messageList, messageDetail, postMessageStatus, team, postTeamAdd, postTeamRemove, postTeamName, auditLog } from './admin.js';
 import { directory } from './directory.js';
 import { cleanUp } from './services.js';
@@ -87,6 +87,8 @@ async function handle(request, env, ctx) {
     case 'GET /producer/join': return user ? getJoin(request, env, user) : needUser();
     case 'POST /producer/join': return user ? postJoin(request, env, user, form) : needUser();
     case 'GET /producers': return directory(request, env, user, url);
+    case 'GET /producers/interest': return getInterest(request, env, user);
+    case 'POST /producers/interest': return postInterest(request, env, user, form);
     case 'GET /producers/map': return mapPage(request, env, user, url);
     case 'GET /producers/map.json': return mapData(request, env, url);
     case 'GET /healthz': return new Response('ok', { headers: { 'Cache-Control': 'no-store' } });

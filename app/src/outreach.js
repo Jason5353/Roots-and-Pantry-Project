@@ -1,9 +1,9 @@
 // Producer outreach: a small CRM in the admin area for finding and inviting producers.
 // PECR: only Ltd companies and LLPs can be emailed without asking first. Sole traders and
 // partnerships get a letter, a visit or a call instead, so the email tools only appear for Ltd/LLP.
-import { html, raw, now, randomId, clean, normEmail, validEmail, validUrl, normPostcode } from './util.js';
-import { errorList, field, securityHeaders } from './layout.js';
-import { sendEmail, audit } from './services.js';
+import { html, raw, now, randomId, clean, normEmail, validEmail, validUrl, normPostcode, sha256 } from './util.js';
+import { page, errorList, field, securityHeaders, turnstileWidget } from './layout.js';
+import { sendEmail, audit, verifyTurnstile, rateLimit } from './services.js';
 import { adminPage } from './admin.js';
 import { todayUK, niceDate, qrSvg } from './producer.js';
 import { COUNTIES } from './data.js';
@@ -18,9 +18,18 @@ const NO_REPLY_DAYS = 14; // after the follow-up, wait this long before marking 
 const COMPANY = 'Roots & Pantry is a trading name of BMS Cyber Defence Ltd, registered in England and Wales, company number 14975379.';
 const POSTAL = ['Roots & Pantry', '254 Holyhead Road', 'Wellington', 'Telford', 'TF1 2EB'];
 
-export const canEmail = (o) => (o.kind === 'ltd' || o.kind === 'llp') && !!o.email;
-// Social media direct messages count as electronic mail under PECR, so the same Ltd/LLP rule applies.
-const canMessage = (o) => o.kind === 'ltd' || o.kind === 'llp';
+// Ltd companies and LLPs can be emailed without asking first. Anyone else only once they've said yes
+// (recorded in consent_*), for example on the "tell me more" form.
+const corporate = (o) => o.kind === 'ltd' || o.kind === 'llp';
+export const canEmail = (o) => (corporate(o) || !!o.consent_email_at) && !!o.email;
+// Social media direct messages count as electronic mail under PECR, so the same rule applies.
+const canMessage = (o) => corporate(o) || !!o.consent_facebook_at;
+const consentDate = (ts) => new Date(ts * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/London' });
+const okLine = (o, channel) => {
+  const at = channel === 'email' ? o.consent_email_at : o.consent_facebook_at;
+  if (!corporate(o) && at) return `✓ They asked us to ${channel === 'email' ? 'email' : 'message'} them on ${consentDate(at)} (${o.consent_how || 'recorded'}).`;
+  return `✓ ${KINDS[o.kind]}${o.company_number ? ` (Companies House ${o.company_number})` : ''}, so a business ${channel === 'email' ? 'email' : 'message'} is allowed.${channel === 'facebook' ? ' Facebook messages follow the same rule as email.' : ''}`;
+};
 const methodAllowed = (o, m) => (m === 'email' ? canEmail(o) : m === 'facebook' ? canMessage(o) : true);
 const isDue = (o, today) => o.stage === 'contacted' && o.contact_count === 1 && o.follow_up_on && o.follow_up_on <= today;
 const addDays = (ymd, n) => new Date(Date.parse(`${ymd}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
@@ -322,7 +331,7 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
     let tool;
     if (canEmail(o)) {
       const e = emailFor(o, which, { user, request, env });
-      tool = html`<p class="pecr">✓ ${KINDS[o.kind]}${o.company_number ? ` (Companies House ${o.company_number})` : ''}, so a business email is allowed.${which === 'follow_up' ? ' This is the one follow-up. After it, the email tools go away.' : ''}</p>
+      tool = html`<p class="pecr">${okLine(o, 'email')}${which === 'follow_up' ? ' This is the one follow-up. After it, the email tools go away.' : ''}</p>
         <p><b>To:</b> ${o.email}<br /><b>Subject:</b> ${e.subject}</p>
         <label for="emailtext" class="sr-only">Email text</label>
         <textarea id="emailtext" class="emailbox" rows="22" readonly>${e.body}</textarea>
@@ -330,11 +339,11 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
         <p class="hint">Paste into Zoho Mail and send from hello@. Then mark it as done below, so the follow-up date is set.</p>
         ${o.facebook ? html`<details class="alt"><summary>Or send a Facebook message instead</summary>${fbTool()}</details>` : ''}`;
     } else if (canMessage(o) && o.facebook) {
-      tool = html`<p class="pecr">✓ ${KINDS[o.kind]}, so a business message is allowed. Facebook messages follow the same rule as email.${which === 'follow_up' ? ' This is the one follow-up.' : ''}</p>${fbTool()}`;
+      tool = html`<p class="pecr">${okLine(o, 'facebook')}${which === 'follow_up' ? ' This is the one follow-up.' : ''}</p>${fbTool()}`;
     } else {
       const why = o.kind === 'unknown'
         ? 'Check Companies House first. If they are a Ltd company or LLP, set the business type and add their email to send an email.'
-        : o.kind === 'ltd' || o.kind === 'llp' ? 'Add their email address or Facebook page to send a message.' : `${KINDS[o.kind]}s can't be emailed or sent a Facebook message without asking first. Send a letter, visit their stall or call. On Facebook, like and share their posts instead, so they come to you.`;
+        : corporate(o) || o.consent_email_at ? 'Add their email address or Facebook page to send a message.' : `${KINDS[o.kind]}s can't be emailed or sent a Facebook message without asking first. Send a letter, visit their stall or call. On Facebook, like and share their posts instead, so they come to you.`;
       tool = html`<p class="pecr pecr-no">${why}</p>
         ${o.address ? html`<div class="btns"><a class="btn btn-green" href="/admin/outreach/${o.id}/letter">Print ${which === 'first' ? 'letter' : 'follow-up letter'}</a></div>` : html`<p>Add a postal address to print a letter.</p>`}`;
     }
@@ -379,6 +388,7 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
               <dt>Instagram</dt><dd>${o.instagram ? html`<a href="${o.instagram}" rel="noopener noreferrer">${shortLink(o.instagram)}</a>` : '–'}</dd>
               <dt>Address</dt><dd class="pre">${[o.address, o.postcode].filter(Boolean).join('\n') || '–'}</dd>
               <dt>Found</dt><dd>${o.source || '–'}</dd>
+              <dt>Permission</dt><dd>${o.consent_email_at || o.consent_facebook_at ? `${[o.consent_email_at && `email (${consentDate(o.consent_email_at)})`, o.consent_facebook_at && `Facebook (${consentDate(o.consent_facebook_at)})`].filter(Boolean).join(', ')}${o.consent_how ? ` · ${o.consent_how}` : ''}` : corporate(o) ? 'Not needed (business email to a company)' : 'None yet'}</dd>
               <dt>Handled by</dt><dd>${o.assigned_name || o.assigned_email || 'Anyone'}</dd>
             </dl>
           </section>
@@ -424,7 +434,7 @@ export async function postStage(request, env, user, id, form) {
   if (to === 'not_interested') {
     await env.DB.batch([
       env.DB.prepare('DELETE FROM outreach_notes WHERE outreach_id = ?').bind(id),
-      env.DB.prepare("UPDATE outreach SET stage = 'not_interested', contact_name = NULL, phone = NULL, address = NULL, postcode = NULL, products = NULL, source = NULL, follow_up_on = NULL, assigned_to = NULL, updated_at = ? WHERE id = ?").bind(t, id),
+      env.DB.prepare("UPDATE outreach SET stage = 'not_interested', consent_email_at = NULL, consent_facebook_at = NULL, consent_how = NULL, contact_name = NULL, phone = NULL, address = NULL, postcode = NULL, products = NULL, source = NULL, follow_up_on = NULL, assigned_to = NULL, updated_at = ? WHERE id = ?").bind(t, id),
       addNote(env, id, user.id, "Not interested. Asked not to be contacted, so their personal details were removed."),
     ]);
   } else {
@@ -631,4 +641,130 @@ export async function outreachDaily(env, today = todayUK()) {
     text: `Follow-ups due today:\n\n${due.map((d) => `- ${d.business_name}`).join('\n')}\n\nOpen the list: ${env.APP_URL}/admin/outreach?tab=due\n\nRoots & Pantry`,
   });
   return due.length;
+}
+
+// ---------- public "tell me more" form ----------
+// Lets sole traders and partnerships (and anyone else) ask us to email them about joining.
+// The ticked box is their permission; we keep the date and the wording as evidence.
+const CONSENT_EMAIL = 'Yes, email me about joining Roots & Pantry';
+const CONSENT_FB = 'You can also send me a Facebook message about it';
+export const INTEREST_SOURCE = 'Website form';
+
+function interestForm(env, user, { values = {}, errors = [], sent = false } = {}) {
+  const err = (f) => errors.find((e) => e.field === f)?.msg;
+  if (sent) {
+    return page(env, { title: 'Thanks', user, body: html`<div class="narrow"><h1>Thanks, we'll be in touch</h1>
+      <p class="sub">We've emailed you how Roots &amp; Pantry works and how to join. If it isn't there in a few minutes, check your junk folder.</p>
+      <p>Ready now? <a href="/signin?next=/producer/join">List your business</a>. It takes about 5 minutes.</p>
+      <p><a class="btn btn-ghost" href="${env.SITE_URL}/for-producers/">Back to For producers</a></p></div>` });
+  }
+  const check = (id, label, hint, required) => html`<div class="field${err(id) ? ' has-error' : ''}">
+    ${err(id) ? html`<p class="error" id="${id}-err">${err(id)}</p>` : ''}
+    <div class="check"><input type="checkbox" id="${id}" name="${id}" value="yes" ${values[id] ? raw('checked') : ''} ${err(id) ? raw(`aria-invalid="true" aria-describedby="${id}-err ${id}-hint"`) : raw(`aria-describedby="${id}-hint"`)} />
+      <label for="${id}">${label}${required ? '' : raw(' <span class="opt">(optional)</span>')}</label></div>
+    <p class="hint" id="${id}-hint">${hint}</p></div>`;
+  return page(env, {
+    title: 'Tell me more',
+    user,
+    turnstile: true,
+    status: errors.length ? 400 : 200,
+    body: html`<div class="narrow">
+      <h1>Not ready to join yet?</h1>
+      <p class="sub">Leave your details and we'll email you how Roots &amp; Pantry works and how to join. No obligation, and it's free to be listed.</p>
+      ${errorList(errors)}
+      <form method="post" action="/producers/interest" novalidate>
+        ${field({ id: 'contact_name', label: 'Your name', value: values.contact_name, autocomplete: 'name', max: 80, error: err('contact_name') })}
+        ${field({ id: 'business_name', label: 'Business name', value: values.business_name, autocomplete: 'organization', max: 120, error: err('business_name') })}
+        ${field({ id: 'email', label: 'Email address', type: 'email', value: values.email, autocomplete: 'email', max: 254, error: err('email') })}
+        ${field({ id: 'town', label: 'Town', value: values.town, required: false, autocomplete: 'address-level2', max: 60 })}
+        <div class="field"><label for="county">County <span class="opt">(optional)</span></label>
+          <select id="county" name="county"><option value="">Choose…</option>${COUNTIES.map((c) => html`<option ${c === values.county ? raw('selected') : ''}>${c}</option>`)}</select></div>
+        ${field({ id: 'products', label: 'What you make or sell', value: values.products, required: false, max: 80 })}
+        ${field({ id: 'facebook', label: 'Facebook page', type: 'url', value: values.facebook, required: false, max: 300, hint: 'The full link, like https://www.facebook.com/yourbusiness', error: err('facebook') })}
+        ${check('consent_email', CONSENT_EMAIL, "We'll send you how it works now, and at most one reminder. Reply \"stop\" at any time and we won't email you again.", true)}
+        ${check('consent_facebook', CONSENT_FB, 'Only if you gave your Facebook page above. Same rules: one message and at most one reminder.', false)}
+        <div class="hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
+        ${turnstileWidget(env)}
+        <button class="btn btn-green" type="submit">Send me the details</button>
+      </form>
+      <p class="note">See how we handle your details in our <a href="${env.SITE_URL}/privacy-and-terms/">privacy notice</a>.</p>
+    </div>`,
+  });
+}
+
+export const getInterest = (request, env, user) => interestForm(env, user);
+
+export async function postInterest(request, env, user, form) {
+  if (form.get('website')) return interestForm(env, user, { sent: true }); // honeypot
+  const { v } = readForm(form);
+  const values = { ...v, consent_email: form.get('consent_email') === 'yes', consent_facebook: form.get('consent_facebook') === 'yes' };
+  const errors = [];
+  if (!v.contact_name) errors.push({ field: 'contact_name', msg: 'Enter your name' });
+  if (!v.business_name) errors.push({ field: 'business_name', msg: 'Enter your business name' });
+  if (!validEmail(v.email)) errors.push({ field: 'email', msg: 'Enter a valid email address, like name@example.co.uk' });
+  if (v.facebook && !(validUrl(v.facebook) && /(^|\.)(facebook\.com|fb\.com)$/.test(hostOf(v.facebook)))) errors.push({ field: 'facebook', msg: 'Enter the full link to your Facebook page, starting https://www.facebook.com/' });
+  if (!values.consent_email) errors.push({ field: 'consent_email', msg: 'Tick the box so we can email you the details' });
+  if (values.consent_facebook && !v.facebook) errors.push({ field: 'facebook', msg: 'Add your Facebook page, or untick the Facebook box' });
+  if (errors.length) return interestForm(env, user, { values, errors });
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  if (!(await verifyTurnstile(env, form.get('cf-turnstile-response'), ip))) {
+    return interestForm(env, user, { values, errors: [{ field: 'consent_email', msg: "We couldn't confirm you're not a robot. Please try again." }] });
+  }
+  if (!(await rateLimit(env, `interest:ip:${await sha256(ip)}`, 5, 3600))) {
+    return interestForm(env, user, { values, errors: [{ field: 'consent_email', msg: 'Too many requests from here in the last hour. Please try later or email hello@rootsandpantry.co.uk.' }] });
+  }
+  const t = now();
+  const today = todayUK();
+  const how = `${INTEREST_SOURCE}: "${CONSENT_EMAIL}"${values.consent_facebook ? ` and "${CONSENT_FB}"` : ''}`;
+  const follow = addDays(today, FOLLOW_UP_DAYS.email);
+  const existing = await env.DB.prepare('SELECT id, stage FROM outreach WHERE email = ? LIMIT 1').bind(v.email).first();
+  let id = existing?.id;
+  const note = `Asked for details on the website and gave permission to email${values.consent_facebook ? ' and message on Facebook' : ''}. We emailed them how it works automatically.`;
+  if (existing) {
+    const joined = existing.stage === 'joined';
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE outreach SET consent_email_at = ?, consent_facebook_at = ?, consent_how = ?,
+          contact_name = coalesce(contact_name, ?), facebook = coalesce(facebook, ?), town = coalesce(town, ?), county = coalesce(county, ?), products = coalesce(products, ?),
+          ${joined ? '' : "stage = 'contacted', contact_count = 1, last_contact_on = ?, follow_up_on = ?,"} updated_at = ? WHERE id = ?`)
+        .bind(t, values.consent_facebook ? t : null, how, v.contact_name, v.facebook || null, v.town || null, v.county || null, v.products || null, ...(joined ? [] : [today, follow]), t, id),
+      addNote(env, id, null, note),
+    ]);
+  } else {
+    id = randomId();
+    await env.DB.batch([
+      env.DB.prepare(`INSERT INTO outreach (id, business_name, contact_name, kind, email, facebook, town, county, products, source, stage, contact_count, last_contact_on, follow_up_on,
+          consent_email_at, consent_facebook_at, consent_how, created_at, updated_at)
+        VALUES (?, ?, ?, 'unknown', ?, ?, ?, ?, ?, ?, 'contacted', 1, ?, ?, ?, ?, ?, ?, ?)`)
+        .bind(id, v.business_name, v.contact_name, v.email, v.facebook || null, v.town || null, v.county || null, v.products || null, INTEREST_SOURCE, today, follow, t, values.consent_facebook ? t : null, how, t, t),
+      addNote(env, id, null, note),
+    ]);
+  }
+  await audit(env, null, 'outreach.interest', id, { business: v.business_name });
+  const join = `${appUrl(request, env)}/producer/join`;
+  await sendEmail(env, {
+    to: v.email,
+    replyTo: env.NOTIFY_EMAIL,
+    subject: 'How Roots & Pantry works for producers',
+    text: `Hi ${firstName(v.contact_name)},
+
+Thanks for asking about Roots & Pantry. Here's how it works.
+
+Roots & Pantry is a free website that helps local families find and buy from independent food producers like ${v.business_name}. Families find you by postcode, and you can set your own exclusive deals for them (at least 10% off, or a free item), so new customers come to you.
+
+Being listed is free. Joining takes about 5 minutes: ${join}
+More about how it works for producers: ${env.SITE_URL}/for-producers/
+
+Any questions, just reply to this email. We'll send you at most one reminder. If you'd rather we didn't, reply "stop" and we won't email you again.
+
+Jason
+Roots & Pantry · hello@rootsandpantry.co.uk
+${COMPANY}`,
+  });
+  await sendEmail(env, {
+    to: env.NOTIFY_EMAIL,
+    replyTo: v.email,
+    subject: `[Producer enquiry] ${v.business_name}`,
+    text: `${v.contact_name} from ${v.business_name}${v.town ? ` (${v.town})` : ''} asked for details on the website and was sent the how-it-works email.\n\nOutreach record: ${env.APP_URL}/admin/outreach/${id}\n\nRoots & Pantry`,
+  });
+  return interestForm(env, user, { sent: true });
 }
