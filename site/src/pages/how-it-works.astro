@@ -32,4 +32,26 @@ import { site } from '../data/site.js';
       <p class="mt"><a class="btn btn-green" href="/for-producers/">Producer details</a></p>
     </div>
   </section>
+
+  <section class="block" id="find-producers" aria-labelledby="find-h">
+    <div class="wrap">
+      <h2 class="sec" id="find-h">Find producers near you</h2>
+      <p class="sub">Independent food and drink producers already on Roots &amp; Pantry. We're starting in Shropshire.</p>
+      <form method="get" action={`${site.app}/producers`} class="panel finder">
+        <div class="ffield">
+          <label for="near">Your postcode or postcode district</label>
+          <p class="fhint" id="near-hint">Like TF1 or TF1 2EB. We only use the first half.</p>
+          <input type="text" id="near" name="near" maxlength="10" autocomplete="postal-code" aria-describedby="near-hint" required />
+        </div>
+        <div class="ffield">
+          <label for="miles">How far?</label>
+          <select id="miles" name="miles">
+            {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50].map((r) => <option value={r} selected={r === 25}>Within {r} miles</option>)}
+          </select>
+        </div>
+        <button class="btn btn-green" type="submit">Find producers</button>
+      </form>
+      <p class="mt">Or <a href={`${site.app}/producers`}>browse by county</a>, or <a href={`${site.app}/producers/map`}>see them all on a map</a>.</p>
+    </div>
+  </section>
 </Layout>

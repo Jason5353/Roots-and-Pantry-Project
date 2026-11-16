@@ -211,3 +211,10 @@ footer.site a { color: var(--ink) }
 .tip-qr img { width: 200px; height: 200px; background: #fff; border: 2px solid var(--ink); border-radius: 14px; padding: 6px }
 .tip-qr figcaption { font-size: .9rem; color: var(--ink-soft); margin-top: 8px }
 @media (max-width: 900px) { .tip { grid-template-columns: 1fr } .tip-qr img { margin: 0 auto } }
+
+/* producer finder form (How it works) */
+.finder { max-width: 640px; display: grid; gap: 18px }
+.ffield label { display: block; font-weight: 700; margin-bottom: 4px }
+.fhint { margin: 0 0 6px; color: var(--ink-soft); font-size: .95rem }
+.finder input, .finder select { width: 100%; min-height: 48px; font: inherit; color: var(--ink); background: #fff; border: 2px solid var(--ink); border-radius: 12px; padding: 8px 14px }
+.finder .btn { justify-self: start }
