@@ -21,13 +21,20 @@ const POSTAL = ['Roots & Pantry', '254 Holyhead Road', 'Wellington', 'Telford', 
 // Ltd companies and LLPs can be emailed without asking first. Anyone else only once they've said yes
 // (recorded in consent_*), for example on the "tell me more" form.
 const corporate = (o) => o.kind === 'ltd' || o.kind === 'llp';
-export const canEmail = (o) => (corporate(o) || !!o.consent_email_at) && !!o.email;
+// Permission counts only if it was given after any withdrawal. Nothing is wiped: the history stays in outreach_consent_log.
+const live = (at, o) => !!at && (!o.consent_withdrawn_at || at > o.consent_withdrawn_at);
+const emailOk = (o) => live(o.consent_email_at, o);
+const facebookOk = (o) => live(o.consent_facebook_at, o);
+export const canEmail = (o) => o.stage !== 'not_interested' && (corporate(o) || emailOk(o)) && !!o.email;
 // Social media direct messages count as electronic mail under PECR, so the same rule applies.
-const canMessage = (o) => corporate(o) || !!o.consent_facebook_at;
+const canMessage = (o) => o.stage !== 'not_interested' && (corporate(o) || facebookOk(o));
+const logConsent = (env, id, event, channel, detail, userId) => env.DB.prepare('INSERT INTO outreach_consent_log (outreach_id, event, channel, detail, by_user, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+  .bind(id, event, channel, detail, userId, now());
+const CONSENT_EVENT = { given: 'Permission given', withdrawn: 'Permission withdrawn', reopened: 'Reopened' };
 const consentDate = (ts) => new Date(ts * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/London' });
 const okLine = (o, channel) => {
   const at = channel === 'email' ? o.consent_email_at : o.consent_facebook_at;
-  if (!corporate(o) && at) return `✓ They asked us to ${channel === 'email' ? 'email' : 'message'} them on ${consentDate(at)} (${o.consent_how || 'recorded'}).`;
+  if (!corporate(o) && live(at, o)) return `✓ They asked us to ${channel === 'email' ? 'email' : 'message'} them on ${consentDate(at)} (${o.consent_how || 'recorded'}).`;
   return `✓ ${KINDS[o.kind]}${o.company_number ? ` (Companies House ${o.company_number})` : ''}, so a business ${channel === 'email' ? 'email' : 'message'} is allowed.${channel === 'facebook' ? ' Facebook messages follow the same rule as email.' : ''}`;
 };
 const methodAllowed = (o, m) => (m === 'email' ? canEmail(o) : m === 'facebook' ? canMessage(o) : true);
@@ -311,11 +318,21 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
   const o = await getItem(env, id);
   if (!o) return null;
   const today = todayUK();
+  const history = await env.DB.prepare('SELECT c.*, u.display_name, u.email FROM outreach_consent_log c LEFT JOIN users u ON u.id = c.by_user WHERE c.outreach_id = ? ORDER BY c.id DESC').bind(id).all().then((r) => r.results);
   const notes = await env.DB.prepare('SELECT n.*, u.display_name, u.email FROM outreach_notes n LEFT JOIN users u ON u.id = n.by_user WHERE n.outreach_id = ? ORDER BY n.id DESC LIMIT 100').bind(id).all().then((r) => r.results);
   const open = o.stage === 'todo' || o.stage === 'contacted';
+  const errFor = (f) => errors.find((e) => e.field === f)?.msg;
+  const howInput = (fid) => html`${errFor(fid) ? html`<p class="error" id="${fid}-err">${errFor(fid)}</p>` : ''}<input id="${fid}" name="how" type="text" maxlength="200" required ${errFor(fid) ? raw(`aria-invalid="true" aria-describedby="${fid}-err"`) : ''} />`;
   const which = o.contact_count === 0 ? 'first' : o.contact_count === 1 ? 'follow_up' : null;
   const nextPanel = () => {
-    if (o.stage === 'not_interested') return html`<section class="panel" id="next"><h2>Don't contact</h2><p>They asked not to be contacted. We keep the business name and email only so they're never contacted again.</p></section>`;
+    if (o.stage === 'not_interested') return html`<section class="panel" id="next"><h2>Don't contact</h2>
+      <p>They said they're not interested${o.consent_withdrawn_at ? ` on ${consentDate(o.consent_withdrawn_at)}` : ''}. Don't email, message or write to them. Their permission history is kept below.</p>
+      <details class="alt" ${errFor('reopen-how') ? raw('open') : ''}><summary>They got back in touch</summary>
+        <form method="post" action="/admin/outreach/${o.id}/stage"><input type="hidden" name="stage" value="todo" />
+          <label for="reopen-how">How did they get in touch?</label>
+          ${howInput('reopen-how')}
+          <p class="hint">For example, "emailed hello@ on 3 March asking to join". Reopening doesn't give permission to email a sole trader again: they need to say yes again, for example on the website form.</p>
+          <button class="btn btn-ghost btn-sm" type="submit">Reopen</button></form></details></section>`;
     if (!open || !which) return '';
     const heading = which === 'first' ? 'First contact' : isDue(o, today) ? 'Follow-up' : `Follow-up (due ${niceDate(o.follow_up_on)})`;
     const markForm = html`<form method="post" action="/admin/outreach/${o.id}/contacted" class="markform">
@@ -343,7 +360,7 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
     } else {
       const why = o.kind === 'unknown'
         ? 'Check Companies House first. If they are a Ltd company or LLP, set the business type and add their email to send an email.'
-        : corporate(o) || o.consent_email_at ? 'Add their email address or Facebook page to send a message.' : `${KINDS[o.kind]}s can't be emailed or sent a Facebook message without asking first. Send a letter, visit their stall or call. On Facebook, like and share their posts instead, so they come to you.`;
+        : corporate(o) || emailOk(o) ? 'Add their email address or Facebook page to send a message.' : `${KINDS[o.kind]}s can't be emailed or sent a Facebook message without asking first. Send a letter, visit their stall or call. On Facebook, like and share their posts instead, so they come to you.`;
       tool = html`<p class="pecr pecr-no">${why}</p>
         ${o.address ? html`<div class="btns"><a class="btn btn-green" href="/admin/outreach/${o.id}/letter">Print ${which === 'first' ? 'letter' : 'follow-up letter'}</a></div>` : html`<p>Add a postal address to print a letter.</p>`}`;
     }
@@ -359,6 +376,7 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
     head: raw('<script src="/copy.js" defer></script>'),
     body: html`<h1>${o.business_name} ${stageTag(o, today)}</h1>
       <p class="sub">${[where, o.products].filter(Boolean).join(' · ') || 'No location yet'}</p>
+      ${errorList(errors.filter((e) => e.field !== 'note'))}
       ${o.producer_id ? html`<p class="callout">They've joined. <a href="/admin/producers/${o.producer_id}">See their listing</a>.</p>` : ''}
       <div class="two">
         <div>
@@ -370,9 +388,11 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
               ${o.stage !== 'joined' && o.stage !== 'not_interested' ? stageBtn('joined', 'They joined') : ''}
               ${o.stage !== 'todo' && o.stage !== 'not_interested' ? stageBtn('todo', 'Back to "to contact"') : ''}
             </div>
-            ${o.stage !== 'not_interested' ? html`<details class="danger"><summary>Not interested, don't contact again</summary>
+            ${o.stage !== 'not_interested' ? html`<details class="danger" ${errFor('no-how') ? raw('open') : ''}><summary>Not interested, don't contact again</summary>
               <form method="post" action="/admin/outreach/${o.id}/stage"><input type="hidden" name="stage" value="not_interested" />
-                <p>This removes their contact name, phone, address and notes. We keep the business name, email, website and social links so they're never contacted again.</p>
+                <label for="no-how">How did they say no?</label>
+                ${howInput('no-how')}
+                <p class="hint">For example, "replied 'no thanks' to our email". This withdraws any permission and records when and how. We remove their contact name, phone, address and notes, and keep the business name, email, website, social links and permission history so they're never contacted again.</p>
                 <button class="btn btn-red btn-sm" type="submit">Mark as not interested</button></form></details>` : ''}
           </section>
         </div>
@@ -388,7 +408,7 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
               <dt>Instagram</dt><dd>${o.instagram ? html`<a href="${o.instagram}" rel="noopener noreferrer">${shortLink(o.instagram)}</a>` : '–'}</dd>
               <dt>Address</dt><dd class="pre">${[o.address, o.postcode].filter(Boolean).join('\n') || '–'}</dd>
               <dt>Found</dt><dd>${o.source || '–'}</dd>
-              <dt>Permission</dt><dd>${o.consent_email_at || o.consent_facebook_at ? `${[o.consent_email_at && `email (${consentDate(o.consent_email_at)})`, o.consent_facebook_at && `Facebook (${consentDate(o.consent_facebook_at)})`].filter(Boolean).join(', ')}${o.consent_how ? ` · ${o.consent_how}` : ''}` : corporate(o) ? 'Not needed (business email to a company)' : 'None yet'}</dd>
+              <dt>Permission</dt><dd>${corporate(o) ? 'Not needed (business email to a company)' : o.stage === 'not_interested' ? 'Withdrawn' : [emailOk(o) && `email (${consentDate(o.consent_email_at)})`, facebookOk(o) && `Facebook (${consentDate(o.consent_facebook_at)})`].filter(Boolean).join(', ') || 'None'}</dd>
               <dt>Handled by</dt><dd>${o.assigned_name || o.assigned_email || 'Anyone'}</dd>
             </dl>
           </section>
@@ -399,8 +419,12 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
             </form>
             <ul class="timeline">${notes.map((n) => html`<li><span class="when">${fmtTime(n.created_at)} · ${n.display_name || n.email || 'Import'}</span><span class="pre">${n.body}</span></li>`)}</ul>
           </section>
+          ${history.length ? html`<section class="panel" aria-labelledby="ph-h"><h2 id="ph-h">Permission history</h2>
+            <p class="hint">Kept as a record, even if they say no.</p>
+            <ul class="timeline">${history.map((h) => html`<li><span class="when">${fmtTime(h.created_at)} · ${h.by_user ? h.display_name || h.email : 'They did this on the website'}</span><b>${CONSENT_EVENT[h.event]}</b>${h.channel && h.channel !== 'all' ? ` (${h.channel.replace('+', ' and ')})` : ''}${h.detail ? html`<br /><span class="pre">${h.detail}</span>` : ''}</li>`)}</ul>
+          </section>` : ''}
           <details class="danger"><summary>Delete this record</summary>
-            <form method="post" action="/admin/outreach/${o.id}/delete"><p>Use this if they ask us to delete their details, or it was added by mistake. It can't be undone.</p>
+            <form method="post" action="/admin/outreach/${o.id}/delete"><p>Only use this if they formally ask us to delete their details, or it was added by mistake. It also deletes the permission history, and can't be undone. If they just don't want to hear from us, use "Not interested" instead.</p>
               <button class="btn btn-red btn-sm" type="submit">Delete ${o.business_name}</button></form></details>
         </div>
       </div>`,
@@ -429,13 +453,25 @@ export async function postStage(request, env, user, id, form) {
   const o = await getItem(env, id);
   if (!o) return null;
   const to = String(form.get('stage') || '');
-  if (!['todo', 'replied', 'joined', 'not_interested'].includes(to) || o.stage === 'not_interested') return redirect(request, `/admin/outreach/${id}`);
+  if (!['todo', 'replied', 'joined', 'not_interested'].includes(to)) return redirect(request, `/admin/outreach/${id}`);
+  if (o.stage === 'not_interested' && to !== 'todo') return redirect(request, `/admin/outreach/${id}`);
+  const how = clean(form.get('how'), 200);
   const t = now();
-  if (to === 'not_interested') {
+  if ((to === 'not_interested' || o.stage === 'not_interested') && !how) {
+    return outreachItem(request, env, user, id, { errors: [{ field: to === 'not_interested' ? 'no-how' : 'reopen-how', msg: 'Say how they told you' }] });
+  }
+  if (o.stage === 'not_interested') {
+    await env.DB.batch([
+      env.DB.prepare("UPDATE outreach SET stage = 'todo', contact_count = 0, follow_up_on = NULL, updated_at = ? WHERE id = ?").bind(t, id),
+      logConsent(env, id, 'reopened', null, how, user.id),
+      addNote(env, id, user.id, `Reopened: ${how}`),
+    ]);
+  } else if (to === 'not_interested') {
     await env.DB.batch([
       env.DB.prepare('DELETE FROM outreach_notes WHERE outreach_id = ?').bind(id),
-      env.DB.prepare("UPDATE outreach SET stage = 'not_interested', consent_email_at = NULL, consent_facebook_at = NULL, consent_how = NULL, contact_name = NULL, phone = NULL, address = NULL, postcode = NULL, products = NULL, source = NULL, follow_up_on = NULL, assigned_to = NULL, updated_at = ? WHERE id = ?").bind(t, id),
-      addNote(env, id, user.id, "Not interested. Asked not to be contacted, so their personal details were removed."),
+      logConsent(env, id, 'withdrawn', 'all', how, user.id),
+      env.DB.prepare("UPDATE outreach SET stage = 'not_interested', consent_withdrawn_at = ?, contact_name = NULL, phone = NULL, address = NULL, postcode = NULL, products = NULL, source = NULL, follow_up_on = NULL, assigned_to = NULL, updated_at = ? WHERE id = ?").bind(t, t, id),
+      addNote(env, id, user.id, `Not interested: ${how}. Their personal details were removed; the permission history is kept.`),
     ]);
   } else {
     await env.DB.batch([
@@ -443,7 +479,7 @@ export async function postStage(request, env, user, id, form) {
       addNote(env, id, user.id, `Stage: ${STAGES[to]}`),
     ]);
   }
-  await audit(env, user.id, 'outreach.stage', id, { to });
+  await audit(env, user.id, 'outreach.stage', id, { to, ...(how && { how }) });
   return redirect(request, `/admin/outreach/${id}`);
 }
 
@@ -739,6 +775,7 @@ export async function postInterest(request, env, user, form) {
       addNote(env, id, null, note),
     ]);
   }
+  await logConsent(env, id, 'given', values.consent_facebook ? 'email+facebook' : 'email', how, null).run();
   await audit(env, null, 'outreach.interest', id, { business: v.business_name });
   const join = `${appUrl(request, env)}/producer/join`;
   await sendEmail(env, {

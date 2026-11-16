@@ -132,7 +132,8 @@ describe('outreach', () => {
   it('removes personal details when someone is not interested, and keeps the email so we never contact them again', async () => {
     const o = await item('Wrekin Valley Butchers');
     await post(`/admin/outreach/${o.id}/note`, { note: 'Met at the market' }, { Cookie: owner });
-    await post(`/admin/outreach/${o.id}/stage`, { stage: 'not_interested' }, { Cookie: owner });
+    expect((await post(`/admin/outreach/${o.id}/stage`, { stage: 'not_interested' }, { Cookie: owner })).status).toBe(400); // must say how
+    await post(`/admin/outreach/${o.id}/stage`, { stage: 'not_interested', how: 'Said no thanks at the market' }, { Cookie: owner });
     const x = await item('Wrekin Valley Butchers');
     expect(x.stage).toBe('not_interested');
     expect(x.address).toBeNull();
@@ -204,11 +205,32 @@ describe('outreach', () => {
     const again = await env.DB.prepare("SELECT COUNT(*) AS n, MAX(consent_facebook_at) AS fb FROM outreach WHERE email = 'meg@example.com'").first();
     expect(again.n).toBe(1);
     expect(again.fb).toBeTruthy();
-    // "Not interested" withdraws the permission.
-    await post(`/admin/outreach/${m.id}/stage`, { stage: 'not_interested' }, { Cookie: owner });
+    // "Not interested" withdraws the permission but keeps the record of it.
+    await post(`/admin/outreach/${m.id}/stage`, { stage: 'not_interested', how: 'Replied stop to our email' }, { Cookie: owner });
     const gone = await item("Meg's Bakes");
-    expect(gone.consent_email_at).toBeNull();
-    expect(gone.consent_facebook_at).toBeNull();
+    expect(gone.consent_email_at).toBeTruthy();
+    expect(gone.consent_withdrawn_at).toBeTruthy();
+    const np = await (await get(`/admin/outreach/${m.id}`, { Cookie: owner })).text();
+    expect(np).not.toContain('id="emailtext"');
+    expect(np).toContain('Permission withdrawn');
+    expect(np).toContain('Replied stop to our email');
+    expect(np).toContain('Permission given');
+    const log = await env.DB.prepare('SELECT event FROM outreach_consent_log WHERE outreach_id = ? ORDER BY id').bind(m.id).all();
+    expect(log.results.map((r) => r.event)).toEqual(['given', 'given', 'withdrawn']);
+    // Reopening needs a reason and doesn't bring the permission back.
+    await env.DB.prepare('UPDATE outreach SET consent_withdrawn_at = consent_withdrawn_at + 5 WHERE id = ?').bind(m.id).run();
+    await post(`/admin/outreach/${m.id}/stage`, { stage: 'todo', how: 'Emailed hello@ asking to join after all' }, { Cookie: owner });
+    const back = await item("Meg's Bakes");
+    expect(back.stage).toBe('todo');
+    const bp = await (await get(`/admin/outreach/${m.id}`, { Cookie: owner })).text();
+    expect(bp).toContain('Reopened');
+    expect(bp).not.toContain('id="emailtext"');
+    // Saying yes again on the form restores it.
+    await new Promise((r) => setTimeout(r, 1100));
+    await env.DB.prepare('UPDATE outreach SET consent_withdrawn_at = ? WHERE id = ?').bind(Math.floor(Date.now() / 1000) - 1, m.id).run();
+    await post('/producers/interest', { contact_name: 'Meg Price', business_name: "Meg's Bakes", email: 'meg@example.com', consent_email: 'yes', 'cf-turnstile-response': 'dev-pass' });
+    expect(await (await get(`/admin/outreach/${m.id}`, { Cookie: owner })).text()).toContain('id="emailtext"');
+    await post(`/admin/outreach/${m.id}/stage`, { stage: 'not_interested', how: 'Changed their mind' }, { Cookie: owner });
   });
 
   it('deletes a record on request, and old records in the daily clean-up', async () => {
