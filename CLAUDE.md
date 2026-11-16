@@ -22,6 +22,7 @@ Full decisions: the claude.ai project doc "Public app – decisions and plan".
 ## Hosting
 - Cloudflare account **"Roots and Pantry Site"** (separate from BMS and the Lewis family site; never touch those).
 - Pages project **`roots-and-pantry-project`** for `site/`: root directory `site`, build `npm run build`, output `dist`, `NODE_VERSION=22`. `main` = production, custom domains **rootsandpantry.co.uk** and www (www redirects to the root via a Redirect Rule; www DNS is a placeholder), `test` = preview (https://test.roots-and-pantry-project.pages.dev).
+- Facebook page "Roots & Pantry" (created 16 Nov from Jason's BMS Socials profile): https://www.facebook.com/profile.php?id=61596356653557 – `site.facebook` in site.js + app footer; switch to facebook.com/rootsandpantry when the username is set. Plain links only, no embeds.
 - Domains: `rootsandpantry.co.uk` (main), `rootsandpantry.uk` (redirects to .co.uk keeping the path – Redirect Rule "to co.uk" + placeholder AAAA 100:: records; never sends email).
 - Email: `hello@rootsandpantry.co.uk` only → Cloudflare Email Routing → admin@bmscyberdefence.co.uk. App email via Brevo (EU). Brevo always adds an open pixel + List-Unsubscribe header; sign-in code emails must be plain text with no links.
 

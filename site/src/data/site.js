@@ -7,6 +7,8 @@ export const site = {
   company: 'BMS Cyber Defence Ltd',
   companyNumber: '14975379',
   companyUrl: 'https://bmscyberdefence.co.uk/',
+  // Facebook page (plain link only, no embeds). Swap for facebook.com/rootsandpantry once the username is set.
+  facebook: 'https://www.facebook.com/profile.php?id=61596356653557',
   // Only shown on the Privacy & Terms page.
   address: '254 Holyhead Road, Wellington, Telford, TF1 2EB',
   phone: '+44 7821 453905',

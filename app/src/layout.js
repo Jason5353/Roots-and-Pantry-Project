@@ -64,7 +64,7 @@ export function page(env, { title, user, body, head = '', turnstile = false, sta
   </main>
   <footer class="site">
     <div class="wrap">
-      <p>Roots &amp; Pantry is a trading name of BMS Cyber Defence Ltd, company number 14975379. <a href="${env.SITE_URL}/privacy-and-terms/">Privacy &amp; terms</a> · <a href="${env.SITE_URL}/accessibility/">Accessibility</a></p>
+      <p>Roots &amp; Pantry is a trading name of BMS Cyber Defence Ltd, company number 14975379. <a href="${env.SITE_URL}/privacy-and-terms/">Privacy &amp; terms</a> · <a href="${env.SITE_URL}/accessibility/">Accessibility</a> · <a href="https://www.facebook.com/profile.php?id=61596356653557" rel="noopener">Facebook</a></p>
     </div>
   </footer>
 </body>
