@@ -72,7 +72,9 @@ describe('outreach', () => {
     expect(sp).toContain(`/admin/outreach/${sole.id}/letter`);
     // Even a forged "email" mark is refused for a sole trader.
     await post(`/admin/outreach/${sole.id}/contacted`, { method: 'email' }, { Cookie: owner });
+    await post(`/admin/outreach/${sole.id}/contacted`, { method: 'facebook' }, { Cookie: owner });
     expect((await item('Wrekin Valley Butchers')).contact_count).toBe(0);
+    expect(sp).not.toContain('<option value="facebook"');
     const letter = await (await get(`/admin/outreach/${sole.id}/letter`, { Cookie: owner })).text();
     expect(letter).toContain('Dear Wrekin Valley Butchers,');
     expect(letter).toContain('Registered office');

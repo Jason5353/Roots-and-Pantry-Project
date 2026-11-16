@@ -19,6 +19,9 @@ const COMPANY = 'Roots & Pantry is a trading name of BMS Cyber Defence Ltd, regi
 const POSTAL = ['Roots & Pantry', '254 Holyhead Road', 'Wellington', 'Telford', 'TF1 2EB'];
 
 export const canEmail = (o) => (o.kind === 'ltd' || o.kind === 'llp') && !!o.email;
+// Social media direct messages count as electronic mail under PECR, so the same Ltd/LLP rule applies.
+const canMessage = (o) => o.kind === 'ltd' || o.kind === 'llp';
+const methodAllowed = (o, m) => (m === 'email' ? canEmail(o) : m === 'facebook' ? canMessage(o) : true);
 const isDue = (o, today) => o.stage === 'contacted' && o.contact_count === 1 && o.follow_up_on && o.follow_up_on <= today;
 const addDays = (ymd, n) => new Date(Date.parse(`${ymd}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 const shortDate = (ymd) => new Date(`${ymd}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -278,7 +281,7 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
     const heading = which === 'first' ? 'First contact' : isDue(o, today) ? 'Follow-up' : `Follow-up (due ${niceDate(o.follow_up_on)})`;
     const markForm = html`<form method="post" action="/admin/outreach/${o.id}/contacted" class="markform">
       <label for="method">How did you get in touch?</label>
-      <select id="method" name="method">${Object.entries(METHODS).filter(([k]) => k !== 'email' || canEmail(o)).map(([k, label]) => html`<option value="${k}" ${(canEmail(o) ? k === 'email' : k === 'letter') ? raw('selected') : ''}>${label}</option>`)}</select>
+      <select id="method" name="method">${Object.entries(METHODS).filter(([k]) => methodAllowed(o, k)).map(([k, label]) => html`<option value="${k}" ${(canEmail(o) ? k === 'email' : k === 'letter') ? raw('selected') : ''}>${label}</option>`)}</select>
       <button class="btn btn-ghost" type="submit">Mark ${which === 'first' ? 'first contact' : 'follow-up'} as done</button>
     </form>`;
     let tool;
@@ -358,7 +361,7 @@ export async function postContacted(request, env, user, id, form) {
   const o = await getItem(env, id);
   if (!o) return null;
   const method = METHODS[form.get('method')] ? String(form.get('method')) : 'letter';
-  if (method === 'email' && !canEmail(o)) return redirect(request, `/admin/outreach/${id}`);
+  if (!methodAllowed(o, method)) return redirect(request, `/admin/outreach/${id}`);
   if (!(o.stage === 'todo' || o.stage === 'contacted') || o.contact_count >= 2) return redirect(request, `/admin/outreach/${id}`);
   const today = todayUK();
   const count = o.contact_count + 1;
