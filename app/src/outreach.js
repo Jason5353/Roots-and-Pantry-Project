@@ -56,7 +56,7 @@ export function emailFor(o, which, { user, request, env }) {
       subject: `Re: ${subject}`,
       body: `${hi}
 
-Just a quick follow-up to my email${o.last_contact_on ? ` of ${niceDate(o.last_contact_on)}` : ''}. Roots & Pantry is a free app that helps local families find independent food producers like ${o.business_name}. You choose an exclusive deal for them, and being listed costs nothing.
+Just a quick follow-up to my email${o.last_contact_on ? ` of ${niceDate(o.last_contact_on)}` : ''}. Roots & Pantry is a free website that helps local families find independent food producers like ${o.business_name}. You can set your own exclusive deals for them, and being listed costs nothing.
 
 Joining takes about 5 minutes: ${join}
 
@@ -70,9 +70,9 @@ ${COMPANY}`,
     subject,
     body: `${hi}
 
-${intro(user)} a new free app that helps families${o.county ? ` in ${o.county}` : ''} find and buy from independent local food producers like ${o.business_name}.
+${intro(user)} a new free website that helps families${o.county ? ` in ${o.county}` : ''} find and buy from independent local food producers like ${o.business_name}.
 
-Being listed is free. Families find you by postcode, and you choose an exclusive deal for them (at least 10% off, or a free item), so new customers come to you.${productLine(o)}
+Being listed is free. Families find you by postcode, and you can set your own exclusive deals for them (at least 10% off, or a free item), so new customers come to you.${productLine(o)}
 
 Joining takes about 5 minutes: ${join}
 How it works for producers: ${env.SITE_URL}/for-producers/
@@ -432,9 +432,9 @@ export async function letter(request, env, user, id) {
     <p class="lt-date">${niceDate(todayUK())}</p>
     <p>Dear ${firstName(o.contact_name) || o.business_name},</p>
     ${follow
-      ? html`<p>I wrote to you on ${niceDate(o.last_contact_on)} about Roots &amp; Pantry, a free app that helps local families find independent food producers like ${o.business_name}. I'm following up once in case my letter got buried.</p>`
-      : html`<p>${intro(user)} a new free app that helps families${o.county ? ` in ${o.county}` : ''} find and buy from independent local food producers like ${o.business_name}.</p>`}
-    <p>Being listed is free. Families find you by postcode, and you choose an exclusive deal for them (at least 10% off, or a free item), so new customers come to you.${productLine(o)}</p>
+      ? html`<p>I wrote to you on ${niceDate(o.last_contact_on)} about Roots &amp; Pantry, a free website that helps local families find independent food producers like ${o.business_name}. I'm following up once in case my letter got buried.</p>`
+      : html`<p>${intro(user)} a new free website that helps families${o.county ? ` in ${o.county}` : ''} find and buy from independent local food producers like ${o.business_name}.</p>`}
+    <p>Being listed is free. Families find you by postcode, and you can set your own exclusive deals for them (at least 10% off, or a free item), so new customers come to you.${productLine(o)}</p>
     <div class="lt-join">
       <div class="sh-qr">${qrSvg(join, { size: 130, label: 'QR code for joining Roots & Pantry' })}</div>
       <p>Joining takes about 5 minutes. Scan the code, or go to<br /><b>${join.replace(/^https:\/\//, '')}</b></p>
