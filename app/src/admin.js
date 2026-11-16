@@ -14,18 +14,32 @@ const STATUS_LABEL = { pending: 'Waiting for approval', approved: 'Live', reject
 const MSG_LABEL = { new: 'New', answered: 'Answered', closed: 'Closed' };
 const redirect = (request, to) => Response.redirect(new URL(to, request.url), 303);
 
-function adminPage(env, user, { title, body, status = 200, back = null }) {
-  const owner = user.role === 'owner';
+const ROLE_LABEL = { owner: 'Owner', moderator: 'Moderator' };
+const SECTIONS = [['overview', '/admin', 'Overview'], ['producers', '/admin/producers', 'Producers'], ['outreach', '/admin/outreach', 'Outreach'], ['messages', '/admin/messages', 'Messages']];
+const OWNER_SECTIONS = [['team', '/admin/team', 'Team'], ['audit', '/admin/audit', 'Audit log']];
+
+export const adminName = (u) => u.display_name || u.email;
+
+// Every admin page: a dark "Admin area" bar showing who is signed in, on a grey background.
+export function adminPage(env, user, { title, body, status = 200, back = null, section = '', head = '' }) {
+  const links = [...SECTIONS, ...(user.role === 'owner' ? OWNER_SECTIONS : [])];
+  const name = adminName(user);
   return page(env, {
     title: `${title} · Admin`,
     user,
     status,
+    head,
+    bodyClass: 'adminmode',
+    topbar: html`<div class="abar" role="region" aria-label="Admin area">
+      <div class="wrap">
+        <p class="alabel"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z" fill="currentColor"/></svg>Admin area</p>
+        <p class="who"><span class="av" aria-hidden="true">${name.slice(0, 1).toUpperCase()}</span><span class="nm"><span class="sr-only">Signed in as </span>${name}<small>${ROLE_LABEL[user.role]}</small></span></p>
+        <a class="leave" href="/">Leave admin</a>
+      </div>
+    </div>`,
     body: html`<div class="admin">
       <nav class="adminnav" aria-label="Admin">
-        <a href="/admin">Overview</a>
-        <a href="/admin/producers">Producers</a>
-        <a href="/admin/messages">Messages</a>
-        ${owner ? html`<a href="/admin/team">Team</a><a href="/admin/audit">Audit log</a>` : ''}
+        ${links.map(([key, href, label]) => html`<a href="${href}" ${key === section ? raw('aria-current="page"') : ''}>${label}</a>`)}
       </nav>
       ${back ? html`<p><a href="${back[0]}">← ${back[1]}</a></p>` : ''}
       ${body}
@@ -115,13 +129,13 @@ export async function overview(request, env, user) {
        WHERE p.status = 'approved' AND d.status = 'active' AND d.ends_on >= ? AND d.ends_on <= date(?, '+7 days')`, today, today),
     q("SELECT COUNT(*) AS n FROM messages WHERE status = 'new'"),
   ]);
+  const followUps = await q("SELECT COUNT(*) AS n FROM outreach WHERE stage = 'contacted' AND contact_count = 1 AND follow_up_on <= ?", today);
   const pending = await env.DB.prepare("SELECT p.id, p.business_name, p.county, p.created_at FROM producers p WHERE p.status = 'pending' ORDER BY p.created_at LIMIT 20").all().then((r) => r.results);
   const stat = (n, label, href) => html`<li class="stat"><a href="${href}"><span class="n">${n}</span><span class="l">${label}</span></a></li>`;
   return adminPage(env, user, {
-    title: 'Overview',
+    title: 'Overview', section: 'overview',
     body: html`<h1>Admin</h1>
-      <p class="sub">Signed in as ${user.email} (${user.role}).</p>
-      <h2>Success measures</h2>
+            <h2>Success measures</h2>
       <ul class="stats">
         ${stat(withLive.n, 'producers with a live deal', '/admin/producers?status=approved')}
         ${stat(liveDeals.n, 'live deals', '/admin/producers?status=approved')}
@@ -132,6 +146,7 @@ export async function overview(request, env, user) {
       <ul class="stats">
         ${stat(byStatus.pending || 0, 'producers waiting for approval', '/admin/producers?status=pending')}
         ${stat(newMsgs.n, 'new messages', '/admin/messages')}
+        ${stat(followUps.n, 'outreach follow-ups due', '/admin/outreach?tab=due')}
       </ul>
       <p class="note">All producers: ${byStatus.approved || 0} live, ${byStatus.pending || 0} waiting, ${byStatus.suspended || 0} suspended, ${byStatus.rejected || 0} not approved.</p>
       ${pending.length ? html`<section class="panel" aria-labelledby="pend-h"><h2 id="pend-h">Waiting for approval</h2><ul class="plain">${pending.map((p) => html`<li><a href="/admin/producers/${p.id}">${p.business_name}</a>, ${p.county} · signed up ${fmtTime(p.created_at)}</li>`)}</ul></section>` : ''}`,
@@ -150,7 +165,7 @@ export async function producerList(request, env, user, url) {
   ).bind(...(status === 'all' ? [today] : [today, status])).all().then((r) => r.results);
   const tab = (key, label) => html`<a href="/admin/producers${key === 'all' ? '' : `?status=${key}`}" ${status === key ? raw('aria-current="page"') : ''}>${label}</a>`;
   return adminPage(env, user, {
-    title: 'Producers',
+    title: 'Producers', section: 'producers',
     body: html`<h1>Producers</h1>
       <nav class="tabs" aria-label="Filter producers">${tab('all', 'All')}${tab('pending', 'Waiting')}${tab('approved', 'Live')}${tab('suspended', 'Suspended')}${tab('rejected', 'Not approved')}</nav>
       ${rows.length ? html`<ul class="rows">${rows.map((p) => html`<li>
@@ -191,7 +206,7 @@ export async function producerDetail(request, env, user, id, { errors = [], valu
     </form>`;
   const approve = (label) => html`<form method="post" action="/admin/producers/${p.id}/status"><input type="hidden" name="to" value="approved" /><button class="btn btn-green" type="submit">${label}</button></form>`;
   return adminPage(env, user, {
-    title: p.business_name,
+    title: p.business_name, section: 'producers',
     status: errors.length ? 400 : 200,
     back: ['/admin/producers', 'All producers'],
     body: html`${new URL(request.url).searchParams.get('done') ? html`<div class="flash" role="status">Done. The producer has been emailed.</div>` : ''}
@@ -319,7 +334,7 @@ export async function messageList(request, env, user, url) {
     .bind(status).all().then((r) => r.results);
   const tab = (key) => html`<a href="/admin/messages?status=${key}" ${status === key ? raw('aria-current="page"') : ''}>${MSG_LABEL[key]}</a>`;
   return adminPage(env, user, {
-    title: 'Messages',
+    title: 'Messages', section: 'messages',
     body: html`<h1>Messages</h1>
       <p class="sub">From the contact form. Each one was also emailed to hello@, so reply from your inbox.</p>
       <nav class="tabs" aria-label="Filter messages">${tab('new')}${tab('answered')}${tab('closed')}</nav>
@@ -336,7 +351,7 @@ export async function messageDetail(request, env, user, id) {
   if (!m) return null;
   const btn = (to, label) => html`<form method="post" action="/admin/messages/${m.id}/status"><input type="hidden" name="to" value="${to}" /><button class="btn btn-ghost btn-sm" type="submit">${label}</button></form>`;
   return adminPage(env, user, {
-    title: 'Message',
+    title: 'Message', section: 'messages',
     back: ['/admin/messages', 'Messages'],
     body: html`<h1>${m.topic}</h1>
       <p class="status"><b>Status:</b> ${MSG_LABEL[m.status]}</p>
@@ -365,23 +380,30 @@ export async function postMessageStatus(request, env, user, id, form) {
 }
 
 // ---------- team (owner only) ----------
-export async function team(request, env, user, { errors = [], email = '' } = {}) {
-  const people = await env.DB.prepare("SELECT id, email, role, last_login_at FROM users WHERE role IN ('owner', 'moderator') ORDER BY role DESC, email").all().then((r) => r.results);
+export async function team(request, env, user, { errors = [], email = '', name = '' } = {}) {
+  const people = await env.DB.prepare("SELECT id, email, role, display_name, last_login_at FROM users WHERE role IN ('owner', 'moderator') ORDER BY role DESC, email").all().then((r) => r.results);
   return adminPage(env, user, {
-    title: 'Team',
+    title: 'Team', section: 'team',
     status: errors.length ? 400 : 200,
     body: html`<h1>Team</h1>
       <p class="sub">Moderators can approve, reject and suspend producers, end deals and handle messages. They can't see this page or the audit log.</p>
       <ul class="rows">${people.map((u) => html`<li>
-        <p class="row-title"><b>${u.email}</b> <span class="tag">${u.role === 'owner' ? 'Owner' : 'Moderator'}</span></p>
-        <p class="row-meta">${u.last_login_at ? `Last signed in ${fmtTime(u.last_login_at)}` : 'Not signed in yet'}</p>
+        <p class="row-title"><b>${u.display_name || 'No name yet'}</b> <span class="tag">${u.role === 'owner' ? 'Owner' : 'Moderator'}</span></p>
+        <p class="row-meta">${u.email} · ${u.last_login_at ? `last signed in ${fmtTime(u.last_login_at)}` : 'not signed in yet'}</p>
+        <form method="post" action="/admin/team/name" class="nameform" novalidate>
+          <input type="hidden" name="id" value="${u.id}" />
+          <label for="name-${u.id}">Name shown in the admin bar<span class="sr-only"> for ${u.email}</span></label>
+          <input id="name-${u.id}" name="name" type="text" maxlength="40" value="${u.display_name || ''}" autocomplete="off" />
+          <button class="btn btn-ghost btn-sm" type="submit">Save name<span class="sr-only"> for ${u.email}</span></button>
+        </form>
         ${u.role === 'moderator' ? html`<form method="post" action="/admin/team/remove"><input type="hidden" name="id" value="${u.id}" /><button class="btn btn-ghost btn-sm" type="submit">Remove moderator<span class="sr-only"> ${u.email}</span></button></form>` : ''}
       </li>`)}</ul>
       <section class="panel" aria-labelledby="add-h">
         <h2 id="add-h">Add a moderator</h2>
         ${errorList(errors)}
         <form method="post" action="/admin/team/add" novalidate>
-          ${field({ id: 'email', label: 'Their email address', type: 'email', value: email, autocomplete: 'off', max: 254, hint: 'They sign in at this app with a code sent to this address.', error: errors[0]?.msg })}
+          ${field({ id: 'display_name', label: 'Their first name', value: name, autocomplete: 'off', max: 40, hint: 'Shown in the admin bar and on outreach notes.', error: errors.find((e) => e.field === 'display_name')?.msg })}
+          ${field({ id: 'email', label: 'Their email address', type: 'email', value: email, autocomplete: 'off', max: 254, hint: 'They sign in at this app with a code sent to this address.', error: errors.find((e) => e.field === 'email')?.msg })}
           <button class="btn btn-green" type="submit">Add moderator</button>
         </form>
       </section>`,
@@ -390,14 +412,18 @@ export async function team(request, env, user, { errors = [], email = '' } = {})
 
 export async function postTeamAdd(request, env, user, form) {
   const email = normEmail(form.get('email'));
-  if (!validEmail(email)) return team(request, env, user, { email, errors: [{ field: 'email', msg: 'Enter a valid email address' }] });
+  const name = clean(form.get('display_name'), 40);
+  const errors = [];
+  if (!name) errors.push({ field: 'display_name', msg: 'Enter their first name' });
+  if (!validEmail(email)) errors.push({ field: 'email', msg: 'Enter a valid email address' });
+  if (errors.length) return team(request, env, user, { email, name, errors });
   const existing = await env.DB.prepare('SELECT id, role FROM users WHERE email = ?').bind(email).first();
-  if (existing?.role === 'owner') return team(request, env, user, { email, errors: [{ field: 'email', msg: "That's the owner account" }] });
+  if (existing?.role === 'owner') return team(request, env, user, { email, name, errors: [{ field: 'email', msg: "That's the owner account" }] });
   let id = existing?.id;
-  if (existing) await env.DB.prepare("UPDATE users SET role = 'moderator' WHERE id = ?").bind(id).run();
+  if (existing) await env.DB.prepare("UPDATE users SET role = 'moderator', display_name = ? WHERE id = ?").bind(name, id).run();
   else {
     id = randomId();
-    await env.DB.prepare("INSERT INTO users (id, email, role, created_at) VALUES (?, ?, 'moderator', ?)").bind(id, email, now()).run();
+    await env.DB.prepare("INSERT INTO users (id, email, role, display_name, created_at) VALUES (?, ?, 'moderator', ?, ?)").bind(id, email, name, now()).run();
   }
   await audit(env, user.id, 'team.moderator_added', id, { email });
   await sendEmail(env, {
@@ -421,6 +447,17 @@ export async function postTeamRemove(request, env, user, form) {
   return redirect(request, '/admin/team');
 }
 
+export async function postTeamName(request, env, user, form) {
+  const id = String(form.get('id') || '');
+  const name = clean(form.get('name'), 40) || null;
+  const u = await env.DB.prepare("SELECT id FROM users WHERE id = ? AND role IN ('owner', 'moderator')").bind(id).first();
+  if (u) {
+    await env.DB.prepare('UPDATE users SET display_name = ? WHERE id = ?').bind(name, u.id).run();
+    await audit(env, user.id, 'team.name_set', u.id, { name });
+  }
+  return redirect(request, '/admin/team');
+}
+
 // ---------- audit log (owner only) ----------
 export async function auditLog(request, env, user, url) {
   const before = Number(url.searchParams.get('before')) || 0;
@@ -428,7 +465,7 @@ export async function auditLog(request, env, user, url) {
     `SELECT a.*, u.email AS actor_email FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id ${before ? 'WHERE a.id < ?' : ''} ORDER BY a.id DESC LIMIT ${PAGE_SIZE}`,
   ).bind(...(before ? [before] : [])).all().then((r) => r.results);
   return adminPage(env, user, {
-    title: 'Audit log',
+    title: 'Audit log', section: 'audit',
     body: html`<h1>Audit log</h1>
       <p class="sub">Every sign-in, listing change and admin action, newest first.</p>
       <ul class="rows audit">${rows.map((a) => html`<li><p class="row-meta"><b>${a.action}</b> · ${fmtTime(a.created_at)} · by ${a.actor_email || 'system'}${a.target ? ` · on ${a.target}` : ''}${a.detail ? ` · ${detailText(a.detail)}` : ''}</p></li>`)}</ul>

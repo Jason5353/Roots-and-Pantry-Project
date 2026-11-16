@@ -155,11 +155,16 @@ describe('messages and team', () => {
   });
 
   it('lets the owner add a moderator, who cannot see team or audit pages', async () => {
-    await post('/admin/team/add', { email: 'Mod@Example.com' }, { Cookie: owner });
-    const u = await env.DB.prepare("SELECT role FROM users WHERE email = 'mod@example.com'").first();
+    expect((await post('/admin/team/add', { email: 'Mod@Example.com' }, { Cookie: owner })).status).toBe(400); // name needed
+    await post('/admin/team/add', { email: 'Mod@Example.com', display_name: 'Jasmine' }, { Cookie: owner });
+    const u = await env.DB.prepare("SELECT role, display_name FROM users WHERE email = 'mod@example.com'").first();
     expect(u.role).toBe('moderator');
+    expect(u.display_name).toBe('Jasmine');
     const { cookie, location } = await signIn('mod@example.com');
     expect(location).toBe('/admin');
+    const bar = await (await get('/admin', { Cookie: cookie })).text();
+    expect(bar).toContain('Admin area');
+    expect(bar).toContain('Signed in as </span>Jasmine<small>Moderator</small>');
     expect((await get('/admin/producers', { Cookie: cookie })).status).toBe(200);
     expect((await get('/admin/team', { Cookie: cookie })).status).toBe(404);
     expect((await get('/admin/audit', { Cookie: cookie })).status).toBe(404);

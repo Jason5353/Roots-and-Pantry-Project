@@ -2,7 +2,8 @@
 import { html } from './util.js';
 import { page } from './layout.js';
 import { loadUser, getSignin, postSignin, postCode, postSignout, isAdmin } from './auth.js';
-import { adminGate, getConfirm, postConfirmSend, postConfirm, overview, producerList, producerDetail, postProducerStatus, postEndDeal, messageList, messageDetail, postMessageStatus, team, postTeamAdd, postTeamRemove, auditLog } from './admin.js';
+import { outreachList, getNewItem, postNewItem, outreachItem, getEditItem, postEditItem, postContacted, postStage, postNote, postDelete, letter, getImport, postImport, csvTemplate, outreachDaily } from './outreach.js';
+import { adminGate, getConfirm, postConfirmSend, postConfirm, overview, producerList, producerDetail, postProducerStatus, postEndDeal, messageList, messageDetail, postMessageStatus, team, postTeamAdd, postTeamRemove, postTeamName, auditLog } from './admin.js';
 import { directory } from './directory.js';
 import { cleanUp } from './services.js';
 import { tiles, emptyGlyphs, mapData, mapPage } from './map.js';
@@ -10,6 +11,7 @@ import { home, getContact, postContact, getJoin, postJoin } from './pages.js';
 import { dashboard, getEdit, postEdit, getNewDeal, postNewDeal, getEditDeal, postEditDeal, postDealStatus, postRenew, publicPage, promote, printSheet, sendExpiryReminders } from './producer.js';
 
 const MAX_BODY = 32 * 1024;
+const MAX_IMPORT_BODY = 1024 * 1024; // CSV upload on /admin/outreach/import
 
 // Reject cross-site form posts (CSRF). Browsers send Sec-Fetch-Site and/or Origin on POST.
 function sameOrigin(request, url) {
@@ -48,7 +50,7 @@ async function handle(request, env, ctx) {
   if (method === 'POST') {
     if (!sameOrigin(request, url)) return new Response('Forbidden', { status: 403 });
     const len = Number(request.headers.get('Content-Length') || 0);
-    if (len > MAX_BODY) return new Response('Too large', { status: 413 });
+    if (len > (path === '/admin/outreach/import' ? MAX_IMPORT_BODY : MAX_BODY)) return new Response('Too large', { status: 413 });
     const type = request.headers.get('Content-Type') || '';
     if (!type.startsWith('application/x-www-form-urlencoded') && !type.startsWith('multipart/form-data')) return new Response('Unsupported', { status: 415 });
     form = await request.formData();
@@ -120,7 +122,14 @@ async function routeAdmin(request, env, user, url, path, method, form) {
     case 'GET /admin/team': return owner ? team(request, env, user) : null;
     case 'POST /admin/team/add': return owner ? postTeamAdd(request, env, user, form) : null;
     case 'POST /admin/team/remove': return owner ? postTeamRemove(request, env, user, form) : null;
+    case 'POST /admin/team/name': return owner ? postTeamName(request, env, user, form) : null;
     case 'GET /admin/audit': return owner ? auditLog(request, env, user, url) : null;
+    case 'GET /admin/outreach': return outreachList(request, env, user, url);
+    case 'GET /admin/outreach/new': return getNewItem(request, env, user);
+    case 'POST /admin/outreach/new': return postNewItem(request, env, user, form);
+    case 'GET /admin/outreach/import': return getImport(request, env, user);
+    case 'POST /admin/outreach/import': return postImport(request, env, user, form);
+    case 'GET /admin/outreach/template.csv': return csvTemplate();
   }
   const id = '([A-Za-z0-9_-]{10,40})';
   let m;
@@ -129,12 +138,24 @@ async function routeAdmin(request, env, user, url, path, method, form) {
   if ((m = path.match(new RegExp(`^/admin/deals/${id}/end$`))) && method === 'POST') return postEndDeal(request, env, user, m[1], form);
   if ((m = path.match(new RegExp(`^/admin/messages/${id}$`))) && method === 'GET') return messageDetail(request, env, user, m[1]);
   if ((m = path.match(new RegExp(`^/admin/messages/${id}/status$`))) && method === 'POST') return postMessageStatus(request, env, user, m[1], form);
+  if ((m = path.match(new RegExp(`^/admin/outreach/${id}(?:/(edit|contacted|stage|note|delete|letter))?$`)))) {
+    const [, oid, act = ''] = m;
+    if (method === 'GET' && act === '') return outreachItem(request, env, user, oid);
+    if (method === 'GET' && act === 'edit') return getEditItem(request, env, user, oid);
+    if (method === 'GET' && act === 'letter') return letter(request, env, user, oid);
+    if (method === 'POST' && act === 'edit') return postEditItem(request, env, user, oid, form);
+    if (method === 'POST' && act === 'contacted') return postContacted(request, env, user, oid, form);
+    if (method === 'POST' && act === 'stage') return postStage(request, env, user, oid, form);
+    if (method === 'POST' && act === 'note') return postNote(request, env, user, oid, form);
+    if (method === 'POST' && act === 'delete') return postDelete(request, env, user, oid);
+  }
   return null;
 }
 
 export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(sendExpiryReminders(env).then((n) => console.log(`expiry reminders sent: ${n}`)));
+    ctx.waitUntil(outreachDaily(env).then((n) => console.log(`outreach follow-ups due today: ${n}`)));
     ctx.waitUntil(cleanUp(env).then((n) => console.log(`clean-up removed ${n} rows`)));
   },
   async fetch(request, env, ctx) {

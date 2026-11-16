@@ -30,7 +30,7 @@ export function securityHeaders(extra = {}) {
   };
 }
 
-export function page(env, { title, user, body, head = '', turnstile = false, status = 200, headers = {} }) {
+export function page(env, { title, user, body, head = '', turnstile = false, status = 200, headers = {}, bodyClass = '', topbar = '' }) {
   const label = env.ENV_LABEL ? html`<aside class="envbar" aria-label="Test copy">${env.ENV_LABEL} copy · data here is for testing only</aside>` : '';
   const doc = html`<!doctype html>
 <html lang="en-GB">
@@ -44,7 +44,7 @@ export function page(env, { title, user, body, head = '', turnstile = false, sta
   ${head}
   ${turnstile ? raw('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>') : ''}
 </head>
-<body>
+<body${bodyClass ? html` class="${bodyClass}"` : ''}>
   <a class="skip" href="#main">Skip to main content</a>
   ${label}
   <header class="site">
@@ -59,6 +59,7 @@ export function page(env, { title, user, body, head = '', turnstile = false, sta
       </nav>
     </div>
   </header>
+  ${topbar}
   <main id="main" tabindex="-1" class="wrap">
     ${body}
   </main>

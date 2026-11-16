@@ -77,6 +77,8 @@ export async function cleanUp(env) {
     env.DB.prepare('DELETE FROM messages WHERE created_at < ?').bind(t - 365 * day),
     env.DB.prepare('DELETE FROM audit_log WHERE created_at < ?').bind(t - 730 * day),
     env.DB.prepare('DELETE FROM dev_outbox WHERE created_at < ?').bind(t - 7 * day),
+    // Outreach: delete 12 months after the last update. "Not interested" stays so we never contact them again.
+    env.DB.prepare("DELETE FROM outreach WHERE stage != 'not_interested' AND updated_at < ?").bind(t - 365 * day),
   ]);
   return r.reduce((n, x) => n + (x.meta?.changes || 0), 0);
 }

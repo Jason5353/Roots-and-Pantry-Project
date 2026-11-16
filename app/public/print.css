@@ -76,3 +76,19 @@
 /* Small screens: shrink the preview only (zoom changes layout size too, so no sideways scrolling). Printing is unaffected. */
 @media screen and (max-width: 820px) { .poster .sheet { zoom: .45 } .postcard .sheet { zoom: .85 } }
 .sh-for b { color: var(--ink) }
+/* outreach letter (A4, plain business letter) */
+.letterpage .sheet.letter { width: 210mm; height: 297mm; padding: 16mm 20mm 14mm; font-size: 4mm; line-height: 1.5 }
+.letter p { margin: 0 0 4mm }
+.lt-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12mm }
+.letter .sh-brand { color: var(--basil); font-size: 8mm }
+.letter .sh-mark { background: var(--basil); color: #fff; width: 11mm; height: 11mm; font-size: 4mm; border-radius: 3mm }
+.letter .sh-amp { color: var(--pepper) }
+.lt-from { text-align: right; font-size: 3.4mm; line-height: 1.45; margin: 0 }
+.lt-to { margin-bottom: 8mm !important }
+.lt-date { margin-bottom: 8mm !important }
+.lt-join { display: flex; align-items: center; gap: 6mm; background: var(--basil-soft); border-radius: 4mm; padding: 4mm 6mm; margin: 2mm 0 6mm }
+.lt-join p { margin: 0 }
+.letter .sh-qr svg { width: 30mm; height: 30mm; display: block }
+.lt-sign { margin-top: 2mm }
+.lt-foot { margin-top: auto; font-size: 2.8mm; color: var(--ink-soft); border-top: .3mm solid var(--line); padding-top: 3mm }
+@media screen and (max-width: 820px) { .letterpage .sheet.letter { zoom: .45 } }

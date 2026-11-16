@@ -16,6 +16,7 @@
   "vars": {
     "APP_NAME": "Roots & Pantry",
     "SITE_URL": "https://rootsandpantry.co.uk",
+    "APP_URL": "https://app.rootsandpantry.co.uk",
     "NOTIFY_EMAIL": "hello@rootsandpantry.co.uk",
     "FROM_EMAIL": "hello@rootsandpantry.co.uk",
     "OWNER_EMAIL": "hello@rootsandpantry.co.uk",
@@ -35,6 +36,7 @@
       "vars": {
         "APP_NAME": "Roots & Pantry",
         "SITE_URL": "https://test.roots-and-pantry-project.pages.dev",
+        "APP_URL": "https://test-app.rootsandpantry.co.uk",
         "NOTIFY_EMAIL": "hello@rootsandpantry.co.uk",
         "FROM_EMAIL": "hello@rootsandpantry.co.uk",
         "OWNER_EMAIL": "hello@rootsandpantry.co.uk",

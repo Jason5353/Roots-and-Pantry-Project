@@ -12,7 +12,7 @@ export async function loadUser(request, env) {
   const token = getCookie(request, COOKIE);
   if (!token || token.length > 100) return null;
   const row = await env.DB.prepare(
-    'SELECT u.id, u.email, u.role, s.last_auth_at, s.id_hash FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id_hash = ? AND s.expires_at > ?',
+    'SELECT u.id, u.email, u.role, u.display_name, s.last_auth_at, s.id_hash FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id_hash = ? AND s.expires_at > ?',
   ).bind(await sha256(token), now()).first();
   return row || null;
 }

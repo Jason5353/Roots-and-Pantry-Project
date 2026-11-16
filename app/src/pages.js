@@ -1,4 +1,5 @@
 // Home, contact form and producer sign-up.
+import { markJoined } from './outreach.js';
 import { html, now, randomId, clean, normEmail, validEmail, validUrl, normPostcode, sha256 } from './util.js';
 import { page, turnstileWidget, errorList, field, select } from './layout.js';
 import { verifyTurnstile, sendEmail, rateLimit, audit } from './services.js';
@@ -174,6 +175,7 @@ export async function postJoin(request, env, user, form) {
     `INSERT INTO producers (id, user_id, slug, business_name, contact_name, phone, website, facebook, postcode, district, county, description, hygiene_link, status, terms_version, terms_accepted_at, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)`,
   ).bind(id, user.id, slug, v.business_name, v.contact_name, v.phone, v.website || null, v.facebook || null, pc, pc.split(' ')[0], v.county, v.description, v.hygiene_link || null, TERMS_VERSION, t, t, t).run();
+  await markJoined(env, { producerId: id, email: user.email, website: v.website, businessName: v.business_name });
   await audit(env, user.id, 'producer.created', id, { business: v.business_name, county: v.county });
   await sendEmail(env, {
     to: env.NOTIFY_EMAIL,
