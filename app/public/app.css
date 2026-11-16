@@ -154,6 +154,8 @@ textarea.emailbox { font: inherit; font-size: .95rem; line-height: 1.45; border-
 .timeline { list-style: none; padding: 0; margin: 18px 0 0 }
 .timeline li { border-left: 3px solid var(--basil-soft); padding: 2px 0 12px 14px }
 .timeline .when { display: block; font-size: .85rem; color: var(--ink-soft); font-weight: 600 }
+details.alt { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 8px }
+details.alt summary { cursor: pointer; font-weight: 700; min-height: 44px; display: inline-flex; align-items: center }
 details.danger { margin: 8px 0 20px }
 details.danger summary { cursor: pointer; font-weight: 700; color: var(--pepper-dark); min-height: 44px; display: inline-flex; align-items: center }
 .empty { padding: 20px 0 }

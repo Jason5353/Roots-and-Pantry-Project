@@ -80,6 +80,29 @@ describe('outreach', () => {
     expect(letter).toContain('Registered office');
   });
 
+  it('keeps website, Facebook, Instagram and postcode separately, and offers Facebook messages only to Ltd/LLP', async () => {
+    expect((await post('/admin/outreach/new', { business_name: 'Bad Links', facebook: 'https://example.com/x', postcode: 'nope' }, { Cookie: owner })).status).toBe(400);
+    await post('/admin/outreach/new', { business_name: 'Clun Valley Cider', kind: 'ltd', facebook: 'facebook.com/clunvalleycider', instagram: '@clun.cider', website: 'clunvalleycider.example', address: 'Mill Farm\nClun', postcode: 'sy78aa', county: 'Shropshire' }, { Cookie: owner });
+    const c = await item('Clun Valley Cider');
+    expect(c.facebook).toBe('https://facebook.com/clunvalleycider');
+    expect(c.instagram).toBe('https://www.instagram.com/clun.cider/');
+    expect(c.website).toBe('https://clunvalleycider.example');
+    expect(c.postcode).toBe('SY7 8AA');
+    const cp = await (await get(`/admin/outreach/${c.id}`, { Cookie: owner })).text();
+    expect(cp).toContain('id="fbtext"');
+    expect(cp).toContain('a new free website that helps families in Shropshire');
+    expect(cp).toContain('<option value="facebook" selected');
+    expect(cp).not.toContain('id="emailtext"');
+    expect(await (await get(`/admin/outreach/${c.id}/letter`, { Cookie: owner })).text()).toContain('Clun<br />SY7 8AA');
+    await post('/admin/outreach/new', { business_name: 'Clee Hill Eggs', kind: 'sole', facebook: 'https://www.facebook.com/cleehilleggs' }, { Cookie: owner });
+    const e = await item('Clee Hill Eggs');
+    const ep = await (await get(`/admin/outreach/${e.id}`, { Cookie: owner })).text();
+    expect(ep).not.toContain('id="fbtext"');
+    expect(ep).toContain('like and share their posts instead');
+    await post(`/admin/outreach/${c.id}/contacted`, { method: 'facebook' }, { Cookie: owner });
+    expect((await item('Clun Valley Cider')).contact_count).toBe(1);
+  });
+
   it('moves through first contact, follow-up and no reply', async () => {
     const o = await item('Corvedale Creamery');
     await post(`/admin/outreach/${o.id}/contacted`, { method: 'email' }, { Cookie: owner });
@@ -120,11 +143,11 @@ describe('outreach', () => {
   });
 
   it('imports a CSV, skipping duplicates and rows without a name', async () => {
-    const csv = 'Business name,Business type,Email,Address,Town,County,Products\r\n'
-      + 'Bramble & Hedge Preserves,Limited,jam@bramble.example,"2 Mill Lane\nMuch Wenlock",Much Wenlock,shropshire,jams\r\n'
-      + 'Corvedale Creamery,Ltd,,,Craven Arms,Shropshire,cheese\r\n'
-      + ',Ltd,x@example.com,,,,\r\n'
-      + 'Ludlow Honey,Sole trader,,,Ludlow,Shropshire,honey\r\n';
+    const csv = 'Business name,Business type,Email,Address,Postcode,Facebook,Town,County,Products\r\n'
+      + 'Bramble & Hedge Preserves,Limited,jam@bramble.example,"2 Mill Lane\nMuch Wenlock",tf136aa,https://www.facebook.com/bramblehedge,Much Wenlock,shropshire,jams\r\n'
+      + 'Corvedale Creamery,Ltd,,,,,Craven Arms,Shropshire,cheese\r\n'
+      + ',Ltd,x@example.com,,,,,,\r\n'
+      + 'Ludlow Honey,Sole trader,,,,,Ludlow,Shropshire,honey\r\n';
     const r = await postFile('/admin/outreach/import', csv, { Cookie: owner });
     const t = await r.text();
     expect(t).toContain('Added 2 producers.');
@@ -133,6 +156,8 @@ describe('outreach', () => {
     expect(b.kind).toBe('ltd');
     expect(b.county).toBe('Shropshire');
     expect(b.address).toBe('2 Mill Lane\nMuch Wenlock');
+    expect(b.postcode).toBe('TF13 6AA');
+    expect(b.facebook).toBe('https://www.facebook.com/bramblehedge');
     expect((await item('Ludlow Honey')).kind).toBe('sole');
     expect((await get('/admin/outreach/template.csv', { Cookie: owner })).headers.get('Content-Type')).toContain('text/csv');
   });
