@@ -6,6 +6,7 @@ import { outreachList, getNewItem, postNewItem, outreachItem, getEditItem, postE
 import { adminGate, getConfirm, postConfirmSend, postConfirm, overview, producerList, producerDetail, postProducerStatus, postEndDeal, messageList, messageDetail, postMessageStatus, team, postTeamAdd, postTeamRemove, postTeamName, auditLog } from './admin.js';
 import { directory } from './directory.js';
 import { cleanUp } from './services.js';
+import { nightlyBackup, BACKUP_CRON } from './backup.js';
 import { tiles, emptyGlyphs, mapData, mapPage } from './map.js';
 import { home, getContact, postContact, getJoin, postJoin } from './pages.js';
 import { dashboard, getEdit, postEdit, getNewDeal, postNewDeal, getEditDeal, postEditDeal, postDealStatus, postRenew, publicPage, promote, printSheet, sendExpiryReminders } from './producer.js';
@@ -156,6 +157,12 @@ async function routeAdmin(request, env, user, url, path, method, form) {
 
 export default {
   async scheduled(controller, env, ctx) {
+    // Own schedule (08:30, after the 08:00 clean-up) so it gets its own query allowance:
+    // the free plan allows 50 D1 queries per invocation.
+    if (controller.cron === BACKUP_CRON) {
+      ctx.waitUntil(nightlyBackup(env));
+      return;
+    }
     ctx.waitUntil(sendExpiryReminders(env).then((n) => console.log(`expiry reminders sent: ${n}`)));
     ctx.waitUntil(outreachDaily(env).then((n) => console.log(`outreach follow-ups due today: ${n}`)));
     ctx.waitUntil(cleanUp(env).then((n) => console.log(`clean-up removed ${n} rows`)));

@@ -10,7 +10,7 @@
   "workers_dev": false,
   "preview_urls": false,
   "observability": { "enabled": true },
-  "triggers": { "crons": ["0 8 * * *"] },
+  "triggers": { "crons": ["0 8 * * *", "30 8 * * *"] },
   "assets": { "directory": "./public", "binding": "ASSETS" },
   "routes": [{ "pattern": "app.rootsandpantry.co.uk", "custom_domain": true }],
   "vars": {
@@ -24,14 +24,17 @@
     "PRODUCER_SIGNUP_OPEN": "true",
     "ENV_LABEL": ""
   },
-  "r2_buckets": [{ "binding": "TILES", "bucket_name": "rp-tiles", "jurisdiction": "eu" }],
+  "r2_buckets": [
+    { "binding": "TILES", "bucket_name": "rp-tiles", "jurisdiction": "eu" },
+    { "binding": "BACKUPS", "bucket_name": "rp-backups", "jurisdiction": "eu" }
+  ],
   "d1_databases": [
     { "binding": "DB", "database_name": "rp-app", "database_id": "a6f83336-a185-49a9-a128-5ab2efa37460", "migrations_dir": "migrations" }
   ],
   "env": {
     "test": {
       "name": "rp-app-test",
-      "triggers": { "crons": ["0 8 * * *"] },
+      "triggers": { "crons": ["0 8 * * *", "30 8 * * *"] },
       "routes": [{ "pattern": "test-app.rootsandpantry.co.uk", "custom_domain": true }],
       "vars": {
         "APP_NAME": "Roots & Pantry",
@@ -44,7 +47,10 @@
         "PRODUCER_SIGNUP_OPEN": "true",
         "ENV_LABEL": "TEST"
       },
-      "r2_buckets": [{ "binding": "TILES", "bucket_name": "rp-tiles", "jurisdiction": "eu" }],
+      "r2_buckets": [
+        { "binding": "TILES", "bucket_name": "rp-tiles", "jurisdiction": "eu" },
+        { "binding": "BACKUPS", "bucket_name": "rp-backups-test", "jurisdiction": "eu" }
+      ],
       "d1_databases": [
         { "binding": "DB", "database_name": "rp-app-test", "database_id": "b5d8ac37-fc15-43d8-95b1-06ea2de71389", "migrations_dir": "migrations" }
       ]

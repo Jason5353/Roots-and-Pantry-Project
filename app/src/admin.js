@@ -3,6 +3,7 @@
 import { html, raw, now, randomId, clean, normEmail, validEmail, sha256 } from './util.js';
 import { page, errorList, field } from './layout.js';
 import { sendEmail, rateLimit, audit } from './services.js';
+import { latestBackup } from './backup.js';
 import { issueCode, checkCode, isAdmin, CODE_MINUTES_VALID } from './auth.js';
 import { dealState, offerText, howText, niceDate, todayUK } from './producer.js';
 
@@ -131,6 +132,9 @@ export async function overview(request, env, user) {
   ]);
   const followUps = await q("SELECT COUNT(*) AS n FROM outreach WHERE stage = 'contacted' AND contact_count = 1 AND follow_up_on <= ?", today);
   const pending = await env.DB.prepare("SELECT p.id, p.business_name, p.county, p.created_at FROM producers p WHERE p.status = 'pending' ORDER BY p.created_at LIMIT 20").all().then((r) => r.results);
+  const backup = await latestBackup(env).catch(() => null);
+  const backupOld = !backup || Date.now() - backup.uploaded.getTime() > 36 * 3600 * 1000;
+  const kb = (n) => (n < 1024 ? `${n} bytes` : `${Math.round(n / 1024)} KB`);
   const stat = (n, label, href) => html`<li class="stat"><a href="${href}"><span class="n">${n}</span><span class="l">${label}</span></a></li>`;
   return adminPage(env, user, {
     title: 'Overview', section: 'overview',
@@ -149,6 +153,9 @@ export async function overview(request, env, user) {
         ${stat(followUps.n, 'outreach follow-ups due', '/admin/outreach?tab=due')}
       </ul>
       <p class="note">All producers: ${byStatus.approved || 0} live, ${byStatus.pending || 0} waiting, ${byStatus.suspended || 0} suspended, ${byStatus.rejected || 0} not approved.</p>
+      <p class="${backupOld ? 'pecr pecr-no' : 'note'}" id="backup-status">${backup
+        ? html`Last backup: ${fmtTime(Math.floor(backup.uploaded.getTime() / 1000))} (${backup.rows} rows, ${kb(backup.bytes)}).${backupOld ? ' That is more than a day old – check the logs.' : ''}`
+        : 'No backup yet. The first one runs at 08:30 UTC.'}</p>
       ${pending.length ? html`<section class="panel" aria-labelledby="pend-h"><h2 id="pend-h">Waiting for approval</h2><ul class="plain">${pending.map((p) => html`<li><a href="/admin/producers/${p.id}">${p.business_name}</a>, ${p.county} · signed up ${fmtTime(p.created_at)}</li>`)}</ul></section>` : ''}`,
   });
 }
