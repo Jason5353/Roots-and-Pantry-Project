@@ -1,5 +1,6 @@
 // Outbound services: Turnstile, Brevo email, rate limits, audit log.
 import { now } from './util.js';
+import { emailHtml as _emailHtml } from './emailtext.js';
 
 const isDev = (env) => env.DEV === 'true';
 
@@ -19,8 +20,11 @@ export async function verifyTurnstile(env, token, ip) {
   }
 }
 
+// Plain text by default; pass html: true for an HTML part (company line in small text), or an HTML string.
+// Sign-in code emails stay plain text only.
+const emailHtmlFrom = (text) => _emailHtml(text);
 // Plain-text email only (no HTML, no links needed). Returns true if accepted by Brevo.
-export async function sendEmail(env, { to, subject, text, replyTo }) {
+export async function sendEmail(env, { to, subject, text, replyTo, html = null }) {
   if (isDev(env)) {
     await env.DB.prepare('INSERT INTO dev_outbox (to_email, subject, body, reply_to, created_at) VALUES (?, ?, ?, ?, ?)')
       .bind(to, subject, text, replyTo || null, now()).run();
@@ -32,6 +36,7 @@ export async function sendEmail(env, { to, subject, text, replyTo }) {
     subject,
     textContent: text,
   };
+  if (html) payload.htmlContent = typeof html === 'string' ? html : emailHtmlFrom(text);
   if (replyTo) payload.replyTo = { email: replyTo };
   try {
     const r = await fetch('https://api.brevo.com/v3/smtp/email', {

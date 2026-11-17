@@ -62,6 +62,8 @@ describe('outreach', () => {
     expect(page).toContain("I&#39;m Jason and I run Roots &amp; Pantry");
     expect(page).toContain('your Wenlock Edge cheddar');
     expect(page).toContain('company number 14975379');
+    expect(page).toContain('hello@rootsandpantry.co.uk\n\n\n\n\nRoots &amp; Pantry is a trading name');
+    expect(page).toContain('<span style="font-size:8pt;color:#56607A">Roots &amp; Pantry is a trading name');
     expect(page).toContain('mailto:sarah%40corvedale.example');
 
     await post('/admin/outreach/new', { business_name: 'Wrekin Valley Butchers', kind: 'sole', email: 'wv@example.com', address: '1 High St\nWellington\nTF1 1AA' }, { Cookie: owner });

@@ -7,6 +7,9 @@ import { sendEmail, audit, verifyTurnstile, rateLimit } from './services.js';
 import { adminPage } from './admin.js';
 import { todayUK, niceDate, qrSvg } from './producer.js';
 import { COUNTIES } from './data.js';
+import { COMPANY, emailHtml } from './emailtext.js';
+
+export { emailHtml };
 
 export const KINDS = { ltd: 'Ltd company', llp: 'LLP', sole: 'Sole trader', partnership: 'Partnership', unknown: 'Not checked yet' };
 const KIND_SHORT = { ltd: 'Ltd', llp: 'LLP', sole: 'Sole trader', partnership: 'Partnership', unknown: 'Type not checked' };
@@ -15,7 +18,7 @@ const METHODS = { email: 'Email', letter: 'Letter', visit: 'Visit or market chat
 const MAX_IMPORT_ROWS = 500;
 const FOLLOW_UP_DAYS = { email: 7, other: 14 };
 const NO_REPLY_DAYS = 14; // after the follow-up, wait this long before marking "No reply"
-const COMPANY = 'Roots & Pantry is a trading name of BMS Cyber Defence Ltd, registered in England and Wales, company number 14975379.';
+const FOOTER_GAP = '\n\n\n\n\n'; // 4 blank lines before the company line
 const POSTAL = ['Roots & Pantry', '254 Holyhead Road', 'Wellington', 'Telford', 'TF1 2EB'];
 
 // Ltd companies and LLPs can be emailed without asking first. Anyone else only once they've said yes
@@ -88,8 +91,7 @@ Joining takes about 5 minutes: ${join}
 
 This is the only follow-up I'll send. If it's not for you, just reply "no thanks".
 
-${signOff(user)}
-${COMPANY}`,
+${signOff(user)}${FOOTER_GAP}${COMPANY}`,
     };
   }
   return {
@@ -105,8 +107,7 @@ How it works for producers: ${env.SITE_URL}/for-producers/
 
 Happy to answer any questions, just reply to this email. If you'd rather not hear from us again, reply "no thanks" and I won't contact you again.
 
-${signOff(user)}
-${COMPANY}`,
+${signOff(user)}${FOOTER_GAP}${COMPANY}`,
   };
 }
 
@@ -351,9 +352,10 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
       tool = html`<p class="pecr">${okLine(o, 'email')}${which === 'follow_up' ? ' This is the one follow-up. After it, the email tools go away.' : ''}</p>
         <p><b>To:</b> ${o.email}<br /><b>Subject:</b> ${e.subject}</p>
         <label for="emailtext" class="sr-only">Email text</label>
-        <textarea id="emailtext" class="emailbox" rows="22" readonly>${e.body}</textarea>
+        <textarea id="emailtext" class="emailbox" rows="26" readonly>${e.body}</textarea>
+        <template id="emailtext-html">${raw(emailHtml(e.body))}</template>
         <div class="btns"><button type="button" class="btn btn-green" data-copy="emailtext">Copy email text</button><a class="btn btn-ghost" href="${mailto(o, e)}">Open in email</a><span data-copied hidden role="status">Copied</span></div>
-        <p class="hint">Paste into Zoho Mail and send from hello@. Then mark it as done below, so the follow-up date is set.</p>
+        <p class="hint">Paste into Zoho Mail and send from hello@ (the company line pastes in small text). Then mark it as done below, so the follow-up date is set.</p>
         ${o.facebook ? html`<details class="alt"><summary>Or send a Facebook message instead</summary>${fbTool()}</details>` : ''}`;
     } else if (canMessage(o) && o.facebook) {
       tool = html`<p class="pecr">${okLine(o, 'facebook')}${which === 'follow_up' ? ' This is the one follow-up.' : ''}</p>${fbTool()}`;
@@ -753,9 +755,10 @@ export async function postInterest(request, env, user, form) {
   const today = todayUK();
   const how = `${INTEREST_SOURCE}: "${CONSENT_EMAIL}"${values.consent_facebook ? ` and "${CONSENT_FB}"` : ''}`;
   const follow = addDays(today, FOLLOW_UP_DAYS.email);
-  const existing = await env.DB.prepare('SELECT id, stage FROM outreach WHERE email = ? LIMIT 1').bind(v.email).first();
+  const existing = await env.DB.prepare('SELECT id, stage, business_name FROM outreach WHERE email = ? LIMIT 1').bind(v.email).first();
   let id = existing?.id;
-  const note = `Asked for details on the website and gave permission to email${values.consent_facebook ? ' and message on Facebook' : ''}. We emailed them how it works automatically.`;
+  const named = existing && existing.business_name.toLowerCase() !== v.business_name.toLowerCase() ? ` (they called their business "${v.business_name}" on the form)` : '';
+  const note = `Asked for details on the website${named} and gave permission to email${values.consent_facebook ? ' and message on Facebook' : ''}. We emailed them how it works automatically.`;
   if (existing) {
     const joined = existing.stage === 'joined';
     await env.DB.batch([
@@ -782,6 +785,7 @@ export async function postInterest(request, env, user, form) {
     to: v.email,
     replyTo: env.NOTIFY_EMAIL,
     subject: 'How Roots & Pantry works for producers',
+    html: true,
     text: `Hi ${firstName(v.contact_name)},
 
 Thanks for asking about Roots & Pantry. Here's how it works.
@@ -794,8 +798,7 @@ More about how it works for producers: ${env.SITE_URL}/for-producers/
 Any questions, just reply to this email. We'll send you at most one reminder. If you'd rather we didn't, reply "stop" and we won't email you again.
 
 Jason
-Roots & Pantry · hello@rootsandpantry.co.uk
-${COMPANY}`,
+Roots & Pantry · hello@rootsandpantry.co.uk${FOOTER_GAP}${COMPANY}`,
   });
   await sendEmail(env, {
     to: env.NOTIFY_EMAIL,
