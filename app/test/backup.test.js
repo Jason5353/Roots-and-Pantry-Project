@@ -86,13 +86,18 @@ describe('backups', () => {
   });
 });
 
-describe('backup schedule', () => {
-  it('runs the backup on its own cron, matching wrangler.jsonc', async () => {
-    const { BACKUP_CRON } = await import('../src/backup.js');
+describe('hourly schedule', () => {
+  it('runs the backup in the 08:30 UTC run and Facebook posts in the others, matching wrangler.jsonc', async () => {
+    const { HOURLY_CRON } = await import('../src/backup.js');
     const worker = (await import('../src/index.js')).default;
-    const waits = [];
-    await worker.scheduled({ cron: BACKUP_CRON, scheduledTime: Date.now() }, env, { waitUntil: (p) => waits.push(p) });
-    expect(waits.length).toBe(1);
-    expect(await waits[0]).not.toBeNull();
+    const run = async (iso) => {
+      const waits = [];
+      await worker.scheduled({ cron: HOURLY_CRON, scheduledTime: Date.parse(iso) }, env, { waitUntil: (p) => waits.push(p) });
+      return Promise.all(waits);
+    };
+    const [backup] = await run('2026-11-19T08:30:00Z');
+    expect(backup.key).toMatch(/^d1\//);
+    const [fb] = await run('2026-11-19T10:30:00Z');
+    expect(fb).toHaveProperty('posted');
   });
 });

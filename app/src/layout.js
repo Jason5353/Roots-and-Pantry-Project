@@ -30,7 +30,23 @@ export function securityHeaders(extra = {}) {
   };
 }
 
-export function page(env, { title, user, body, head = '', turnstile = false, status = 200, headers = {}, bodyClass = '', topbar = '' }) {
+// Link previews for Facebook and other sites (Open Graph). Plain meta tags: no Facebook code on our pages.
+export function ogTags(env, { title, description = '', path = '/', image = 'producer' }) {
+  const base = env.APP_URL || '';
+  const desc = String(description).replace(/\s+/g, ' ').trim();
+  return html`<meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Roots &amp; Pantry" />
+  <meta property="og:locale" content="en_GB" />
+  <meta property="og:title" content="${title}" />
+  ${desc ? html`<meta property="og:description" content="${desc.length > 200 ? `${desc.slice(0, 197)}…` : desc}" /><meta name="description" content="${desc.length > 200 ? `${desc.slice(0, 197)}…` : desc}" />` : ''}
+  <meta property="og:url" content="${base}${path}" />
+  <meta property="og:image" content="${base}/og/${image}.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="${image === 'christmas' ? 'Roots & Pantry: Christmas from local producers' : 'Roots & Pantry: independent local food producers and their offers'}" />`;
+}
+
+export function page(env, { title, user, body, head = '', turnstile = false, status = 200, headers = {}, bodyClass = '', topbar = '', og = null }) {
   const label = env.ENV_LABEL ? html`<aside class="envbar" aria-label="Test copy">${env.ENV_LABEL} copy · data here is for testing only</aside>` : '';
   const doc = html`<!doctype html>
 <html lang="en-GB">
@@ -41,6 +57,7 @@ export function page(env, { title, user, body, head = '', turnstile = false, sta
   <title>${title ? `${title} | ` : ''}Roots &amp; Pantry</title>
   <link rel="stylesheet" href="/app.css" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  ${og ? ogTags(env, og) : ''}
   ${head}
   ${turnstile ? raw('<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>') : ''}
 </head>

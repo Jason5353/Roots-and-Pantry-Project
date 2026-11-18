@@ -7,6 +7,7 @@ import { page, errorList, field } from './layout.js';
 import { audit } from './services.js';
 import { getProducer, dealState, niceDate, todayUK, addDays, daysBetween, isDate, HEALTH_CLAIMS, offerText, howText } from './producer.js';
 import { parseNear, milesBetween, deliversTo, RADII } from './directory.js';
+import { queueOffer } from './facebook.js';
 
 export const MIN_OFFER_DAYS = 3;
 const MAX_LIVE_OFFERS = 10;
@@ -144,6 +145,7 @@ export async function postNewOffer(request, env, user, form) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
   ).bind(id, p.id, v.kind, v.title, v.price, v.details || null, v.ready_text || null, v.how, v.order_url || null, v.allergens || null, v.alcohol ? 1 : 0, v.christmas ? 1 : 0, v.starts_on, v.ends_on, t, t).run();
   await audit(env, user.id, 'offer.created', id, { producer: p.id });
+  await queueOffer(env, p, { id, starts_on: v.starts_on, alcohol: v.alcohol });
   return Response.redirect(new URL('/producer?done=offer', request.url), 303);
 }
 
@@ -185,7 +187,7 @@ export async function postOfferStatus(request, env, user, id, form) {
 // ---------- public ----------
 export function offerItem(o, p) {
   const link = o.order_url || p.website;
-  return html`<li class="offer">
+  return html`<li class="offer" id="offer-${o.id}">
     <p class="offer-title"><b>${o.title}</b> <span class="offer-price">${o.price}</span></p>
     <p class="deal-meta">${kindText[o.kind]} · ${howText[o.how]} · ${untilText(o)}${o.alcohol ? ' · Adults only' : ''}</p>
     ${o.details ? html`<p>${o.details}</p>` : ''}
@@ -235,6 +237,7 @@ export async function christmasPage(request, env, user, url) {
   return page(env, {
     title: 'Christmas from local producers',
     user,
+    og: { title: 'Christmas from local producers | Roots & Pantry', description: 'Turkeys, hampers, cakes and gifts from independent farms, bakers and makers. Search by postcode and order before the order-by dates.', path: '/producers/christmas', image: 'christmas' },
     status: error ? 400 : 200,
     body: html`<div class="dir">
       <h1>Christmas from local producers</h1>

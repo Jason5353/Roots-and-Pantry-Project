@@ -104,6 +104,7 @@ function directoryPage(env, user, { title = 'Local producers', status = 200, bod
     title,
     user,
     status,
+    og: { title: 'Local food producers | Roots & Pantry', description: 'Find independent farms, bakers, butchers and makers near you, with their offers. Search by postcode or county.', path: '/producers' },
     body: html`<div class="dir">
       <h1>Local food producers</h1>
       <p class="sub">Independent farms, bakers, makers and shops with deals for Roots &amp; Pantry families.</p>

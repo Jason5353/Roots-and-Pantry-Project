@@ -222,3 +222,4 @@ ul.offers { display: grid; gap: 12px }
 ul.plain li.offer-deal { border-color: var(--basil); background: var(--basil-soft) }
 .offer-price { display: inline-block; font-weight: 800; color: var(--basil); white-space: nowrap }
 .offer-deal .offer-price { color: #145234 }
+.fbtext { white-space: pre-line; background: #F4F5F8; border-radius: 10px; padding: 10px 14px; margin: 8px 0 }

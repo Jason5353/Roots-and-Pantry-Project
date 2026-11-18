@@ -433,9 +433,15 @@ export async function publicPage(request, env, user, slug) {
   const deals = (await listDeals(env, p.id)).filter((d) => ['live', 'waiting'].includes(dealState(d, p.status, today)[0]));
   const offers = await liveOffers(env, p, today);
   const district = (p.postcode || '').split(' ')[0];
+  const offerCount = offers.length;
   return page(env, {
     title: p.business_name,
     user,
+    og: p.status === 'approved' ? {
+      title: `${p.business_name} on Roots & Pantry`,
+      description: `${district}, ${p.county}. ${p.description}${offerCount ? ` ${offerCount} ${offerCount === 1 ? 'offer' : 'offers'} on now.` : ''}`,
+      path: `/p/${p.slug}`,
+    } : null,
     body: html`<div class="narrow">
       ${p.status !== 'approved' ? html`<div class="callout" role="note"><p><b>${isOwner ? 'Preview' : 'Admin view'}.</b> ${PREVIEW_NOTE[p.status]?.(isOwner) || ''}</p></div>` : ''}
       <p class="eyebrow">${district}, ${p.county}</p>

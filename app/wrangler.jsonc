@@ -1,7 +1,7 @@
 // Roots & Pantry app. Top level = production (app.rootsandpantry.co.uk, branch main).
 // `env.test` = test copy (test-app.rootsandpantry.co.uk, branch test) with its own database.
 // Secrets (set in the Cloudflare dashboard, never in this file):
-//   TURNSTILE_SECRET, BREVO_API_KEY, CODE_PEPPER
+//   TURNSTILE_SECRET, BREVO_API_KEY, CODE_PEPPER, FB_PAGE_TOKEN (live only; see docs/facebook.md)
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "rp-app",
@@ -10,7 +10,7 @@
   "workers_dev": false,
   "preview_urls": false,
   "observability": { "enabled": true },
-  "triggers": { "crons": ["0 8 * * *", "30 8 * * *"] },
+  "triggers": { "crons": ["0 8 * * *", "30 * * * *"] },
   "assets": { "directory": "./public", "binding": "ASSETS" },
   "routes": [{ "pattern": "app.rootsandpantry.co.uk", "custom_domain": true }],
   "vars": {
@@ -22,7 +22,9 @@
     "OWNER_EMAIL": "hello@rootsandpantry.co.uk",
     "TURNSTILE_SITE_KEY": "0x4AAAAAAGBL884bbg2kowkP",
     "PRODUCER_SIGNUP_OPEN": "true",
-    "ENV_LABEL": ""
+    "ENV_LABEL": "",
+    "FB_AUTOPOST": "on",
+    "FB_PAGE_ID": "61596356653557"
   },
   "r2_buckets": [
     { "binding": "TILES", "bucket_name": "rp-tiles", "jurisdiction": "eu" },
@@ -34,7 +36,7 @@
   "env": {
     "test": {
       "name": "rp-app-test",
-      "triggers": { "crons": ["0 8 * * *", "30 8 * * *"] },
+      "triggers": { "crons": ["0 8 * * *", "30 * * * *"] },
       "routes": [{ "pattern": "test-app.rootsandpantry.co.uk", "custom_domain": true }],
       "vars": {
         "APP_NAME": "Roots & Pantry",
@@ -45,7 +47,9 @@
         "OWNER_EMAIL": "hello@rootsandpantry.co.uk",
         "TURNSTILE_SITE_KEY": "0x4AAAAAAGBL884bbg2kowkP",
         "PRODUCER_SIGNUP_OPEN": "true",
-        "ENV_LABEL": "TEST"
+        "ENV_LABEL": "TEST",
+        "FB_AUTOPOST": "off",
+        "FB_PAGE_ID": "61596356653557"
       },
       "r2_buckets": [
         { "binding": "TILES", "bucket_name": "rp-tiles", "jurisdiction": "eu" },

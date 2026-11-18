@@ -5,6 +5,7 @@ import { page, errorList, field } from './layout.js';
 import { sendEmail, rateLimit, audit } from './services.js';
 import { latestBackup } from './backup.js';
 import { kindText, untilText } from './offers.js';
+import { queueProducer } from './facebook.js';
 import { issueCode, checkCode, isAdmin, CODE_MINUTES_VALID } from './auth.js';
 import { dealState, offerText, howText, niceDate, todayUK } from './producer.js';
 
@@ -17,7 +18,7 @@ const MSG_LABEL = { new: 'New', answered: 'Answered', closed: 'Closed' };
 const redirect = (request, to) => Response.redirect(new URL(to, request.url), 303);
 
 const ROLE_LABEL = { owner: 'Owner', moderator: 'Moderator' };
-const SECTIONS = [['overview', '/admin', 'Overview'], ['producers', '/admin/producers', 'Producers'], ['outreach', '/admin/outreach', 'Outreach'], ['messages', '/admin/messages', 'Messages']];
+const SECTIONS = [['overview', '/admin', 'Overview'], ['producers', '/admin/producers', 'Producers'], ['outreach', '/admin/outreach', 'Outreach'], ['messages', '/admin/messages', 'Messages'], ['facebook', '/admin/facebook', 'Facebook']];
 const OWNER_SECTIONS = [['team', '/admin/team', 'Team'], ['audit', '/admin/audit', 'Audit log']];
 
 export const adminName = (u) => u.display_name || u.email;
@@ -330,6 +331,8 @@ export async function postProducerStatus(request, env, user, id, form) {
     .bind(to, to === 'approved' ? null : reason, t, user.id, t, p.id, p.status).run();
   if (!res.meta.changes) return redirect(request, `/admin/producers/${p.id}`); // someone else changed it first
   await audit(env, user.id, `producer.${to}`, p.id, to === 'approved' ? { from: p.status } : { from: p.status, reason });
+  // Welcome post on the R&P Facebook page for a first approval only (not a reinstatement).
+  if (to === 'approved' && p.status !== 'suspended') await queueProducer(env, p);
   const mail = EMAILS[to](p, new URL(request.url).origin, p.status === 'suspended', reason);
   await sendEmail(env, { to: p.email, replyTo: env.NOTIFY_EMAIL, ...mail });
   return redirect(request, `/admin/producers/${p.id}?done=1`);

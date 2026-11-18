@@ -7,7 +7,9 @@ import { adminGate, getConfirm, postConfirmSend, postConfirm, overview, producer
 import { directory } from './directory.js';
 import { getNewOffer, postNewOffer, getEditOffer, postEditOffer, postOfferStatus, christmasPage } from './offers.js';
 import { cleanUp } from './services.js';
-import { nightlyBackup, BACKUP_CRON } from './backup.js';
+import { nightlyBackup, HOURLY_CRON, BACKUP_HOUR_UTC } from './backup.js';
+import { processFacebookQueue, facebookAdmin, postFacebookNow, postFacebookCancel } from './facebook.js';
+import { adminPage } from './admin.js';
 import { tiles, emptyGlyphs, mapData, mapPage } from './map.js';
 import { home, getContact, postContact, getJoin, postJoin } from './pages.js';
 import { dashboard, getEdit, postEdit, getNewDeal, postNewDeal, getEditDeal, postEditDeal, postDealStatus, postRenew, publicPage, promote, printSheet, sendExpiryReminders } from './producer.js';
@@ -147,6 +149,7 @@ async function routeAdmin(request, env, user, url, path, method, form) {
     case 'GET /admin/outreach/import': return getImport(request, env, user);
     case 'POST /admin/outreach/import': return postImport(request, env, user, form);
     case 'GET /admin/outreach/template.csv': return csvTemplate();
+    case 'GET /admin/facebook': return facebookAdmin(request, env, user, url, { adminPage, done: url.searchParams.get('done') || '' });
   }
   const id = '([A-Za-z0-9_-]{10,40})';
   let m;
@@ -154,6 +157,7 @@ async function routeAdmin(request, env, user, url, path, method, form) {
   if ((m = path.match(new RegExp(`^/admin/producers/${id}/status$`))) && method === 'POST') return postProducerStatus(request, env, user, m[1], form);
   if ((m = path.match(new RegExp(`^/admin/deals/${id}/end$`))) && method === 'POST') return postEndDeal(request, env, user, m[1], form);
   if ((m = path.match(new RegExp(`^/admin/offers/${id}/end$`))) && method === 'POST') return postEndDeal(request, env, user, m[1], form, 'offers');
+  if ((m = path.match(new RegExp(`^/admin/facebook/${id}/(now|cancel)$`))) && method === 'POST') return m[2] === 'now' ? postFacebookNow(request, env, user, m[1]) : postFacebookCancel(request, env, user, m[1]);
   if ((m = path.match(new RegExp(`^/admin/messages/${id}$`))) && method === 'GET') return messageDetail(request, env, user, m[1]);
   if ((m = path.match(new RegExp(`^/admin/messages/${id}/status$`))) && method === 'POST') return postMessageStatus(request, env, user, m[1], form);
   if ((m = path.match(new RegExp(`^/admin/outreach/${id}(?:/(edit|contacted|stage|note|delete|letter))?$`)))) {
@@ -174,8 +178,11 @@ export default {
   async scheduled(controller, env, ctx) {
     // Own schedule (08:30, after the 08:00 clean-up) so it gets its own query allowance:
     // the free plan allows 50 D1 queries per invocation.
-    if (controller.cron === BACKUP_CRON) {
-      ctx.waitUntil(nightlyBackup(env));
+    // Hourly job: the backup once a day, Facebook posts the rest of the time (kept apart so
+    // each run stays well inside the free plan's 50 queries per invocation).
+    if (controller.cron === HOURLY_CRON) {
+      if (new Date(controller.scheduledTime).getUTCHours() === BACKUP_HOUR_UTC) ctx.waitUntil(nightlyBackup(env));
+      else ctx.waitUntil(processFacebookQueue(env).then((d) => { console.log('facebook', JSON.stringify(d)); return d; }));
       return;
     }
     ctx.waitUntil(sendExpiryReminders(env).then((n) => console.log(`expiry reminders sent: ${n}`)));

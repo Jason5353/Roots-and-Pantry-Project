@@ -5,12 +5,12 @@ There are two kinds of backup, and they cover different problems.
 | | What | Kept | Use it for |
 |---|---|---|---|
 | **D1 Time Travel** | Built into Cloudflare D1, automatic | 7 days (free plan), 30 days (paid) | "Something went wrong in the last few days – put the whole database back to how it was at 9am Tuesday." |
-| **Nightly copies** | `app/src/backup.js`, run by the daily cron (08:00 UTC, after the clean-up) | 30 days | Getting back a single record, a deleted database, or anything older than Time Travel covers. |
+| **Nightly copies** | `app/src/backup.js`, run by the 08:30 UTC run of the hourly cron (after the 08:00 clean-up) | 30 days | Getting back a single record, a deleted database, or anything older than Time Travel covers. |
 
 ## Nightly copies
 
 - **Where:** R2 buckets `rp-backups` (live) and `rp-backups-test` (test), both EU jurisdiction, binding `BACKUPS`. One file a day: `d1/YYYY-MM-DD.sql.gz`.
-- **Tables included:** users, producers, deals, messages, audit_log, outreach, outreach_notes, outreach_consent_log.
+- **Tables included:** users, producers, deals, offers, fb_posts, messages, audit_log, outreach, outreach_notes, outreach_consent_log.
 - **Not included:** sign-in codes, sessions, rate limits (short-lived and sensitive), dev_outbox, postcode_districts (rebuilt by migration 0005).
 - **Format:** plain SQL, gzipped, one statement per line. It starts with `DELETE FROM` for each table, then `INSERT`s, so running it **replaces** those tables completely.
 - **Kept:** 30 days, then deleted by the same job. This matches the privacy notice ("Database backups") – change both together.
