@@ -24,7 +24,7 @@
     "PRODUCER_SIGNUP_OPEN": "true",
     "ENV_LABEL": "",
     "FB_AUTOPOST": "on",
-    "FB_PAGE_ID": "61596356653557"
+    "FB_PAGE_ID": "1495690693621331"
   },
   "r2_buckets": [
     { "binding": "TILES", "bucket_name": "rp-tiles", "jurisdiction": "eu" },
@@ -49,7 +49,7 @@
         "PRODUCER_SIGNUP_OPEN": "true",
         "ENV_LABEL": "TEST",
         "FB_AUTOPOST": "off",
-        "FB_PAGE_ID": "61596356653557"
+        "FB_PAGE_ID": "1495690693621331"
       },
       "r2_buckets": [
         { "binding": "TILES", "bucket_name": "rp-tiles", "jurisdiction": "eu" },

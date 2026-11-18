@@ -12,7 +12,7 @@ import { sendEmail, audit } from './services.js';
 import { todayUK } from './producer.js';
 import { kindText, untilText } from './offers.js';
 
-export const FB_GRAPH = 'https://graph.facebook.com/v26.0';
+export const FB_GRAPH = 'https://graph.facebook.com/v27.0';
 export const HOLD_SECONDS = 60 * 60;
 const MAX_PER_RUN = 5;
 

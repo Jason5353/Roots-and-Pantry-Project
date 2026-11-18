@@ -15,7 +15,7 @@ When a producer is approved for the first time, or an approved producer adds an 
 | Name | Where | Value |
 |---|---|---|
 | `FB_AUTOPOST` | `wrangler.jsonc` | `on` live, `off` test |
-| `FB_PAGE_ID` | `wrangler.jsonc` | the page's ID (`61596356653557`; check in step 6) |
+| `FB_PAGE_ID` | `wrangler.jsonc` | the page's API ID `1495690693621331` (from `me/accounts`; not the number in the page's web address) |
 | `FB_PAGE_TOKEN` | Cloudflare secret, **live Worker `rp-app` only** | the page access token from step 6 |
 
 Until `FB_PAGE_TOKEN` is set, the live app records "Not posted" too. Those can be sent afterwards with "Try posting again".
@@ -36,6 +36,10 @@ Use the Facebook account that manages the Roots & Pantry page. Never paste a tok
 7. **Cloudflare → Workers & Pages → rp-app → Settings → Variables and Secrets → Add.** Type: **Secret**. Name: `FB_PAGE_TOKEN`. Value: the page token. **Deploy.**
 8. Test it: in Admin → Facebook on the live app, click **Try posting again** on a row (or wait for the next new offer). Then check the post from a phone or browser **not** logged in as you. If only you can see it, the Meta app needs to be switched to **Live**: App settings → Basic → Privacy policy URL `https://rootsandpantry.co.uk/privacy-and-terms/`, category "Business and pages", then switch **App mode** to **Live**. Posting to your own page doesn't need App Review.
 
+## Data access expiry (about every 3 months)
+
+The page token itself never expires, but Meta's Access Token Debugger also shows "Data Access Expires" about 90 days ahead (first one: mid-February 2027). If posts start failing after that with a permissions or "data access" error, repeat steps 4 to 7 (about 5 minutes) and update `FB_PAGE_TOKEN`.
+
 ## If it stops working
 
 The page token stops working if you change your Facebook password, lose admin of the page, or remove the app. hello@ will get "Facebook post failed … token". Repeat steps 4 to 7 and update `FB_PAGE_TOKEN`, then use **Try posting again**.
@@ -44,4 +48,4 @@ If the token ever leaks: Facebook → the R&P page → Settings → Business int
 
 ## Graph API version
 
-`FB_GRAPH` in `facebook.js` is `v26.0` (latest in Nov 2026). Meta supports each version for about two years; bump it before it expires.
+`FB_GRAPH` in `facebook.js` is `v27.0` (latest in Nov 2026). Meta supports each version for about two years; bump it before it expires.
