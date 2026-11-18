@@ -192,7 +192,7 @@ export function offerItem(o, p) {
     <p class="deal-meta">${kindText[o.kind]} · ${howText[o.how]} · ${untilText(o)}${o.alcohol ? ' · Adults only' : ''}</p>
     ${o.details ? html`<p>${o.details}</p>` : ''}
     ${o.ready_text ? html`<p><b>Ready:</b> ${o.ready_text}</p>` : ''}
-    ${o.allergens ? html`<p class="deal-meta">Allergens: ${o.allergens}. Always check the label.</p>` : ''}
+    ${o.allergens ? html`<p class="deal-meta">Allergens: ${o.allergens.replace(/[.\s]+$/, '')}. Always check the label.</p>` : ''}
     ${link && o.how !== 'in_person' ? html`<p><a href="${link}" rel="noopener nofollow">Order or find out more<span class="sr-only">: ${o.title}</span></a></p>` : ''}
   </li>`;
 }

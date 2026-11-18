@@ -131,3 +131,11 @@ describe('health-claim check and cured meat', () => {
     for (const t of ['Manuka honey cures sore throats', 'Honey that cures coughs', 'This tea cures colds', 'Boosts immunity', 'Detox juice 10% off']) expect(claims(t)).toBe(true);
   });
 });
+
+describe('deal wording', () => {
+  it("doesn't say Free twice", async () => {
+    const { offerText } = await import('../src/producer.js');
+    expect(offerText({ kind: 'free_item', free_item: 'Buy 5, get 1 free' })).toBe('Buy 5, get 1 free');
+    expect(offerText({ kind: 'free_item', free_item: 'jar of chutney' })).toBe('Free jar of chutney');
+  });
+});

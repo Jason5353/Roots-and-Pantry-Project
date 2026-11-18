@@ -49,7 +49,8 @@ export function dealState(deal, producerStatus, today = todayUK()) {
   return ['live', 'Live'];
 }
 
-export const offerText = (d) => (d.kind === 'percent' ? `${d.percent}% off` : `Free ${d.free_item}`);
+// Don't add "Free" when the producer has already written it ("Buy 5, get 1 free", "Free loaf with…").
+export const offerText = (d) => (d.kind === 'percent' ? `${d.percent}% off` : /\bfree\b/i.test(d.free_item || '') ? d.free_item : `Free ${d.free_item}`);
 export const howText = { online: 'Online', in_person: 'In person', both: 'Online and in person' };
 
 // ---------- dashboard ----------
