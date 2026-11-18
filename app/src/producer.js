@@ -4,17 +4,21 @@ import { html, raw, now, randomId, clean, validUrl, normPostcode } from './util.
 import { page, errorList, field, select, securityHeaders } from './layout.js';
 import { sendEmail, audit } from './services.js';
 import { COUNTIES } from './data.js';
+import { offersFor, offersPanel, liveOffers, offersSection } from './offers.js';
 
 export const MIN_PERCENT = 10;
 export const MIN_DAYS = 14;
 const MAX_LIVE_DEALS = 10;
-const HEALTH_CLAIMS = /\b(cures?|cured|heal(s|ing)?|immun\w*|detox\w*|boosts?|prevents?|superfoods?|medicinal|anti-?ageing|anti-?inflammatory)\b/i;
+// "Cure" is also how bacon and ham are made, so "dry-cured", "home cured" and "salt cure" are fine;
+// "cures colds" is not. "Cured" on its own is almost always about meat, so it isn't checked.
+const CURING = '(?<!(?:dry|home|salt|brine|air)[-\\s])';
+export const HEALTH_CLAIMS = new RegExp(`\\b(${CURING}cures?|heal(s|ing)?|immun\\w*|detox\\w*|boosts?|prevents?|superfoods?|medicinal|anti-?ageing|anti-?inflammatory)\\b`, 'i');
 
 // ---------- dates (UK local) ----------
 export const todayUK = (d = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(d);
-const addDays = (ymd, n) => { const d = new Date(`${ymd}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+export const addDays = (ymd, n) => { const d = new Date(`${ymd}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 export const daysBetween = (a, b) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86400000);
-const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(`${s}T12:00:00Z`));
+export const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(`${s}T12:00:00Z`));
 export const niceDate = (ymd) => new Date(`${ymd}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 // ---------- data ----------
@@ -52,7 +56,7 @@ export const howText = { online: 'Online', in_person: 'In person', both: 'Online
 export async function dashboard(request, env, user, url) {
   const p = await getProducer(env, user.id);
   if (!p) return Response.redirect(new URL('/producer/join', request.url), 303);
-  const deals = await listDeals(env, p.id);
+  const [deals, offers] = await Promise.all([listDeals(env, p.id), offersFor(env, p.id)]);
   const today = todayUK();
   const statusText = {
     pending: ['Waiting for approval', "We check every listing by hand and will email you when it goes live. You can add your deals now; they'll go live with your listing."],
@@ -60,7 +64,7 @@ export async function dashboard(request, env, user, url) {
     rejected: ['Not approved', "We couldn't approve this listing. We've emailed you the reason. Reply to that email if you'd like to talk."],
     suspended: ['Suspended', "Your listing is paused. We've emailed you the reason. Reply to that email to appeal."],
   }[p.status] || ['Unknown', ''];
-  const flash = { saved: 'Your listing has been saved.', deal: 'Your deal has been saved.', renewed: 'Your deal has been renewed for 30 days.', paused: 'Your deal is paused.', resumed: 'Your deal is running again.', ended: 'Your deal has ended.' }[url.searchParams.get('done')];
+  const flash = { saved: 'Your listing has been saved.', deal: 'Your deal has been saved.', renewed: 'Your deal has been renewed for 30 days.', paused: 'Your deal is paused.', resumed: 'Your deal is running again.', ended: 'Your deal has ended.', offer: 'Your offer has been saved.', 'offer-paused': 'Your offer is paused.', 'offer-resumed': 'Your offer is running again.', 'offer-ended': 'Your offer has ended.' }[url.searchParams.get('done')];
   return page(env, {
     title: 'My listing',
     user,
@@ -78,7 +82,7 @@ export async function dashboard(request, env, user, url) {
           const endingSoon = state === 'live' && daysBetween(today, d.ends_on) <= 7;
           return html`<li class="deal">
             <div class="deal-main">
-              <p class="deal-title"><b>${d.title}</b> <span class="tag tag-${state}">${label}</span>${endingSoon ? html` <span class="tag tag-soon">Ends soon</span>` : ''}</p>
+              <p class="deal-title"><b>${d.title}</b> <span class="tag tag-${state}">${label}</span>${endingSoon ? html` <span class="tag tag-soon">Ends soon</span>` : ''}${d.christmas ? html` <span class="tag tag-xmas">Christmas</span>` : ''}</p>
               <p class="deal-meta">${offerText(d)} · ${howText[d.how]} · ${d.redemption === 'code' ? `Code ${d.code}` : 'Mention Roots & Pantry'} · ${niceDate(d.starts_on)} to ${niceDate(d.ends_on)}${d.alcohol ? ' · Adults only' : ''}</p>
             </div>
             <div class="deal-actions">
@@ -91,6 +95,8 @@ export async function dashboard(request, env, user, url) {
           </li>`;
         })}</ul>` : html`<p>No deals yet. Add one: at least ${MIN_PERCENT}% off or a free item, running for at least ${MIN_DAYS} days.</p>`}
       </section>
+
+      ${offersPanel(offers, p.status, today)}
 
       <div class="cards">
         <section class="panel">
@@ -158,7 +164,7 @@ export async function getEdit(request, env, user) {
   return listingForm(env, user, p);
 }
 
-const isFacebook = (u) => { try { return /^(www\.|m\.)?(facebook|fb)\.com$/i.test(new URL(u).hostname); } catch { return false; } };
+export const isFacebook = (u) => { try { return /^(www\.|m\.)?(facebook|fb)\.com$/i.test(new URL(u).hostname); } catch { return false; } };
 
 export async function postEdit(request, env, user, form) {
   const p = await getProducer(env, user.id);
@@ -235,6 +241,7 @@ function dealForm(env, user, p, v, { errors = [], id = null } = {}) {
         </div>
         ${field({ id: 'allergens', label: 'Allergens in these products', value: v.allergens, required: false, hint: 'For example: milk, nuts, gluten. Families will be told to always check the label too.', error: err('allergens'), max: 200 })}
         ${field({ id: 'small_print', label: 'Small print', value: v.small_print, required: false, rows: 2, hint: 'Any conditions, like "one per customer" or "not with other offers".', error: err('small_print'), max: 300 })}
+        <div class="field"><div class="check"><input type="checkbox" id="christmas" name="christmas" value="yes" ${v.christmas ? raw('checked') : ''} /><label for="christmas">Show it on our Christmas page too</label></div></div>
         <div class="field"><div class="check"><input type="checkbox" id="alcohol" name="alcohol" value="yes" ${v.alcohol ? raw('checked') : ''} /><label for="alcohol">This deal includes alcohol (only adults will see it)</label></div></div>
         <button class="btn btn-green" type="submit">${id ? 'Save deal' : 'Add deal'}</button>
       </form>
@@ -247,7 +254,7 @@ function readDeal(form) {
     title: clean(form.get('title'), 80), kind: clean(form.get('kind'), 10), percent: clean(form.get('percent'), 3), free_item: clean(form.get('free_item'), 120),
     products: clean(form.get('products'), 300), how: clean(form.get('how'), 10), redemption: clean(form.get('redemption'), 10),
     code: clean(form.get('code'), 20).toUpperCase(), online_url: clean(form.get('online_url'), 300), starts_on: clean(form.get('starts_on'), 10),
-    ends_on: clean(form.get('ends_on'), 10), allergens: clean(form.get('allergens'), 200), small_print: clean(form.get('small_print'), 300), alcohol: form.get('alcohol') === 'yes',
+    ends_on: clean(form.get('ends_on'), 10), allergens: clean(form.get('allergens'), 200), small_print: clean(form.get('small_print'), 300), alcohol: form.get('alcohol') === 'yes', christmas: form.get('christmas') === 'yes',
   };
 }
 
@@ -300,10 +307,10 @@ export async function postNewDeal(request, env, user, form) {
   const id = randomId();
   const t = now();
   await env.DB.prepare(
-    `INSERT INTO deals (id, producer_id, title, kind, percent, free_item, products, how, redemption, code, online_url, small_print, allergens, alcohol, starts_on, ends_on, status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+    `INSERT INTO deals (id, producer_id, title, kind, percent, free_item, products, how, redemption, code, online_url, small_print, allergens, alcohol, christmas, starts_on, ends_on, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
   ).bind(id, p.id, v.title, v.kind, percent, v.kind === 'free_item' ? v.free_item : null, products, v.how, v.redemption, v.redemption === 'code' ? v.code : null,
-    v.online_url || null, v.small_print || null, v.allergens || null, v.alcohol ? 1 : 0, v.starts_on, v.ends_on, t, t).run();
+    v.online_url || null, v.small_print || null, v.allergens || null, v.alcohol ? 1 : 0, v.christmas ? 1 : 0, v.starts_on, v.ends_on, t, t).run();
   await audit(env, user.id, 'deal.created', id, { producer: p.id });
   return Response.redirect(new URL('/producer?done=deal', request.url), 303);
 }
@@ -312,7 +319,7 @@ export async function getEditDeal(request, env, user, id) {
   const p = await getProducer(env, user.id);
   const d = p && (await getDeal(env, p.id, id));
   if (!d) return null;
-  return dealForm(env, user, p, { ...d, alcohol: !!d.alcohol, code: d.code || '' }, { id });
+  return dealForm(env, user, p, { ...d, alcohol: !!d.alcohol, christmas: !!d.christmas, code: d.code || '' }, { id });
 }
 
 export async function postEditDeal(request, env, user, id, form) {
@@ -326,9 +333,9 @@ export async function postEditDeal(request, env, user, id, form) {
   if (errors.length) return dealForm(env, user, p, v, { errors, id });
   await env.DB.prepare(
     `UPDATE deals SET title = ?, kind = ?, percent = ?, free_item = ?, products = ?, how = ?, redemption = ?, code = ?, online_url = ?, small_print = ?, allergens = ?,
-     alcohol = ?, starts_on = ?, ends_on = ?, updated_at = ? WHERE id = ? AND producer_id = ?`,
+     alcohol = ?, christmas = ?, starts_on = ?, ends_on = ?, updated_at = ? WHERE id = ? AND producer_id = ?`,
   ).bind(v.title, v.kind, percent, v.kind === 'free_item' ? v.free_item : null, products, v.how, v.redemption, v.redemption === 'code' ? v.code : null,
-    v.online_url || null, v.small_print || null, v.allergens || null, v.alcohol ? 1 : 0, v.starts_on, v.ends_on, now(), id, p.id).run();
+    v.online_url || null, v.small_print || null, v.allergens || null, v.alcohol ? 1 : 0, v.christmas ? 1 : 0, v.starts_on, v.ends_on, now(), id, p.id).run();
   await audit(env, user.id, 'deal.edited', id);
   return Response.redirect(new URL('/producer?done=deal', request.url), 303);
 }
@@ -424,6 +431,7 @@ export async function publicPage(request, env, user, slug) {
   if (p.status !== 'approved' && !isOwner && !isAdmin) return statusPage(env, user, p);
   const today = todayUK();
   const deals = (await listDeals(env, p.id)).filter((d) => ['live', 'waiting'].includes(dealState(d, p.status, today)[0]));
+  const offers = await liveOffers(env, p, today);
   const district = (p.postcode || '').split(' ')[0];
   return page(env, {
     title: p.business_name,
@@ -434,6 +442,7 @@ export async function publicPage(request, env, user, slug) {
       <h1>${p.business_name}</h1>
       <p class="sub">${p.description}</p>
       ${deals.length ? html`<section class="panel deal-public" aria-labelledby="deals-h"><h2 id="deals-h">Exclusive deals for Roots &amp; Pantry families</h2><ul class="plain">${deals.map((d) => html`<li><b>${d.title}</b><br />${offerText(d)} · ${howText[d.how]}${d.alcohol ? ' · Adults only' : ''} · Until ${niceDate(d.ends_on)}</li>`)}</ul><p class="note">Families see how to claim each deal in the Roots &amp; Pantry app.</p></section>` : ''}
+      ${offersSection(offers, p)}
       <section class="panel" aria-labelledby="where-h">
         <h2 id="where-h">Where to find us</h2>
         <dl class="details">

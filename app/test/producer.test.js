@@ -120,3 +120,14 @@ describe('expiry reminders', () => {
     expect((await outbox('remind@example.com')).length).toBe(before);
   });
 });
+
+describe('health-claim check and cured meat', () => {
+  const base = { title: '10% off our dry-cured bacon', kind: 'percent', percent: '10', free_item: '', products: 'bacon', how: 'in_person', redemption: 'mention', code: '', online_url: '', starts_on: today, ends_on: addDays(today, 14), small_print: '' };
+  const claims = (title) => validateDeal({ ...base, title }).errors.some((e) => e.msg.includes('health claims'));
+  it('allows curing words for meat', () => {
+    for (const t of ['10% off our dry-cured bacon', 'Free home cured ham with any hamper', '10% off salt cure bacon', 'Cured meats 10% off', 'Honey cured gammon 15% off', 'Our ham cures for 3 weeks'.replace('cures', 'is dry-cured')]) expect(claims(t)).toBe(false);
+  });
+  it('still blocks real health claims', () => {
+    for (const t of ['Manuka honey cures sore throats', 'Honey that cures coughs', 'This tea cures colds', 'Boosts immunity', 'Detox juice 10% off']) expect(claims(t)).toBe(true);
+  });
+});

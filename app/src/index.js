@@ -5,6 +5,7 @@ import { loadUser, getSignin, postSignin, postCode, postSignout, isAdmin } from 
 import { outreachList, getNewItem, postNewItem, outreachItem, getEditItem, postEditItem, postContacted, postStage, postNote, postDelete, letter, getImport, postImport, csvTemplate, outreachDaily, getInterest, postInterest } from './outreach.js';
 import { adminGate, getConfirm, postConfirmSend, postConfirm, overview, producerList, producerDetail, postProducerStatus, postEndDeal, messageList, messageDetail, postMessageStatus, team, postTeamAdd, postTeamRemove, postTeamName, auditLog } from './admin.js';
 import { directory } from './directory.js';
+import { getNewOffer, postNewOffer, getEditOffer, postEditOffer, postOfferStatus, christmasPage } from './offers.js';
 import { cleanUp } from './services.js';
 import { nightlyBackup, BACKUP_CRON } from './backup.js';
 import { tiles, emptyGlyphs, mapData, mapPage } from './map.js';
@@ -82,6 +83,9 @@ async function handle(request, env, ctx) {
     case 'POST /producer/edit': return user ? postEdit(request, env, user, form) : needUser();
     case 'GET /producer/deals/new': return user ? getNewDeal(request, env, user) : needUser();
     case 'POST /producer/deals/new': return user ? postNewDeal(request, env, user, form) : needUser();
+    case 'GET /producer/offers/new': return user ? getNewOffer(request, env, user, url) : needUser();
+    case 'POST /producer/offers/new': return user ? postNewOffer(request, env, user, form) : needUser();
+    case 'GET /producers/christmas': return christmasPage(request, env, user, url);
     case 'GET /producer/promote': return user ? promote(request, env, user) : needUser();
     case 'GET /producer/promote/poster': return user ? printSheet(request, env, user, 'poster') : needUser();
     case 'GET /producer/promote/postcard': return user ? printSheet(request, env, user, 'postcard') : needUser();
@@ -105,6 +109,16 @@ async function handle(request, env, ctx) {
     if (method === 'POST' && action === 'edit') res = await postEditDeal(request, env, user, id, form);
     if (method === 'POST' && action === 'status') res = await postDealStatus(request, env, user, id, form);
     if (method === 'POST' && action === 'renew') res = await postRenew(request, env, user, id);
+    return res || notFound(env, user);
+  }
+  const om = path.match(/^\/producer\/offers\/([A-Za-z0-9_-]{10,40})\/(edit|status)$/);
+  if (om) {
+    if (!user) return needUser();
+    const [, id, action] = om;
+    let res = null;
+    if (method === 'GET' && action === 'edit') res = await getEditOffer(request, env, user, id);
+    if (method === 'POST' && action === 'edit') res = await postEditOffer(request, env, user, id, form);
+    if (method === 'POST' && action === 'status') res = await postOfferStatus(request, env, user, id, form);
     return res || notFound(env, user);
   }
   if (method !== 'POST' && /^\/map\/fonts\/[^/]+\/\d+-\d+\.pbf$/.test(decodeURIComponent(path))) return emptyGlyphs();
@@ -139,6 +153,7 @@ async function routeAdmin(request, env, user, url, path, method, form) {
   if ((m = path.match(new RegExp(`^/admin/producers/${id}$`))) && method === 'GET') return producerDetail(request, env, user, m[1]);
   if ((m = path.match(new RegExp(`^/admin/producers/${id}/status$`))) && method === 'POST') return postProducerStatus(request, env, user, m[1], form);
   if ((m = path.match(new RegExp(`^/admin/deals/${id}/end$`))) && method === 'POST') return postEndDeal(request, env, user, m[1], form);
+  if ((m = path.match(new RegExp(`^/admin/offers/${id}/end$`))) && method === 'POST') return postEndDeal(request, env, user, m[1], form, 'offers');
   if ((m = path.match(new RegExp(`^/admin/messages/${id}$`))) && method === 'GET') return messageDetail(request, env, user, m[1]);
   if ((m = path.match(new RegExp(`^/admin/messages/${id}/status$`))) && method === 'POST') return postMessageStatus(request, env, user, m[1], form);
   if ((m = path.match(new RegExp(`^/admin/outreach/${id}(?:/(edit|contacted|stage|note|delete|letter))?$`)))) {

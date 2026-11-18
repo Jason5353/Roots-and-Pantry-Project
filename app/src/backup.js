@@ -7,7 +7,7 @@
 import { sendEmail } from './services.js';
 
 // Parents before children, so inserts satisfy the foreign keys. Deletes run in reverse.
-export const BACKUP_TABLES = ['users', 'producers', 'deals', 'messages', 'audit_log', 'outreach', 'outreach_notes', 'outreach_consent_log'];
+export const BACKUP_TABLES = ['users', 'producers', 'deals', 'offers', 'messages', 'audit_log', 'outreach', 'outreach_notes', 'outreach_consent_log'];
 export const BACKUP_DAYS = 30;
 export const BACKUP_CRON = '30 8 * * *'; // must match wrangler.jsonc (both environments)
 const PREFIX = 'd1/';

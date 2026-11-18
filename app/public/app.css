@@ -214,3 +214,11 @@ ul.countylist a { display: inline-block; padding: 8px 0 }
 @media (prefers-reduced-motion: reduce) { .maplibregl-popup, .maplibregl-marker { transition: none !important } }
 .maplibregl-ctrl-attrib a { display: inline-block; min-height: 24px; line-height: 24px }
 .dealpick select { width: 100% }
+/* Offers & specials, Christmas page */
+.tag-xmas { background: #FDECEA; color: var(--pepper-dark) }
+ul.offers { display: grid; gap: 12px }
+.offer, ul.plain li.offer, ul.plain li.offer:first-child { border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px }
+.offer p { margin: 4px 0 }
+ul.plain li.offer-deal { border-color: var(--basil); background: var(--basil-soft) }
+.offer-price { display: inline-block; font-weight: 800; color: var(--basil); white-space: nowrap }
+.offer-deal .offer-price { color: #145234 }

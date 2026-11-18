@@ -2,8 +2,8 @@
 import Layout from '../layouts/Layout.astro';
 import { site, contact } from '../data/site.js';
 // Keep in step with TERMS_VERSION in app/src/pages.js. Producers agree to this version when they join.
-const version = '2026-11-v1';
-const updated = '15 November 2026';
+const version = '2026-11-v2';
+const updated = '18 November 2026';
 ---
 <Layout title="Producer terms" description="The rules for listing your food or drink business and your deals on Roots & Pantry.">
   <div class="wrap pagehead">
@@ -12,7 +12,7 @@ const updated = '15 November 2026';
   </div>
   <div class="wrap prose">
     <div class="callout">
-      <p><b>In short:</b> your listing is free. Deals must be at least 10% off or a free item, run for at least 14 days, and be honest. Food and drink only, no health claims, and alcohol is only shown to adults. You can leave at any time.</p>
+      <p><b>In short:</b> your listing is free. Exclusive deals for Roots &amp; Pantry families must be at least 10% off or a free item and run for at least 14 days. You can also list your own offers and specials, like multibuys, gift boxes and Christmas pre-orders, for at least 3 days. Everything must be honest. Food and drink only, no health claims, and alcohol is only shown to adults. You can leave at any time.</p>
     </div>
 
     <h2 id="about">1. About these terms</h2>
@@ -37,8 +37,14 @@ const updated = '15 November 2026';
       <li>You let us show your listing and deals on our website, in the app and in our own promotion, such as social media posts about local producers. This permission is free, and it ends when you remove your listing. Posts already published can stay up.</li>
     </ul>
 
-    <h2 id="deals">4. Deal rules</h2>
-    <p>Every deal must:</p>
+    <h2 id="deals">4. Deals and offers</h2>
+    <p>You can list two kinds of thing:</p>
+    <ul>
+      <li><b>Exclusive deals</b> just for Roots &amp; Pantry families. These are shown first and badged.</li>
+      <li><b>Offers and specials</b>: your own offers, open to everyone, like multibuys, gift boxes and pre-orders. These are shown below your exclusive deals.</li>
+    </ul>
+    <h3 id="deal-rules">Exclusive deals</h3>
+    <p>Every exclusive deal must:</p>
     <ol>
       <li><b>Be worth having:</b> at least 10% off, or a free item.</li>
       <li><b>Run for at least 14 days.</b> If you need to end a deal early (for example, you've sold out), end it in your dashboard straight away.</li>
@@ -51,15 +57,31 @@ const updated = '15 November 2026';
     </ol>
     <p>You can have up to 10 deals running at once. Each deal can run for up to a year, and you can renew it.</p>
 
+    <h3 id="offers">Offers and specials</h3>
+    <p>An offer or special must be one of these:</p>
+    <ul>
+      <li>a multibuy or bundle, like "4 sausages for £12.50"</li>
+      <li>a pre-order, like Christmas turkeys, hampers or cakes</li>
+      <li>a gift box or seasonal special, like a honey selection box or a barbecue pack</li>
+    </ul>
+    <p>Every offer must:</p>
+    <ol>
+      <li><b>Run for at least 3 days.</b> For a pre-order, the end date is the last day to order.</li>
+      <li><b>Show a real price.</b> If you show a "was" price or a saving, it must be a price you have actually charged recently, for a reasonable time. Don't raise prices to make an offer look better.</li>
+      <li><b>Be clear about pre-orders:</b> say when and how people get their order, and honour the orders you take.</li>
+      <li>Follow the same rules as deals for food or drink, health claims, allergens and alcohol (points 5 to 8 above).</li>
+    </ol>
+    <p>You can have up to 10 offers running at once. Each can run for up to a year. You can choose to show an offer or deal on our Christmas page.</p>
+
     <h2 id="selling">5. Selling to families</h2>
     <ul>
-      <li>When a family uses your deal, they buy from you, not from us. Your normal terms of sale apply, and you're responsible for your products, delivery, refunds and consumer law.</li>
-      <li>We don't take payments or commission, and we can't guarantee how many families will use your deals.</li>
+      <li>When someone uses your deal or offer, they buy from you, not from us. Your normal terms of sale apply, and you're responsible for your products, delivery, refunds and consumer law.</li>
+      <li>We don't take payments or commission, and we can't guarantee how many people will use your deals or offers.</li>
     </ul>
 
     <h2 id="us">6. What we do</h2>
     <ul>
-      <li>Show your listing in our public directory, and show your deals to families near you once the family app opens.</li>
+      <li>Show your listing, your offers and specials in our public directory, and show your exclusive deals to families near you once the family app opens.</li>
       <li>Give you a dashboard to manage your listing and deals, plus a promote kit (QR code, poster, postcard and Facebook post).</li>
       <li>Give you totals of how families use your deals. We'll never give you their names, email addresses or other details.</li>
       <li>Never sell your information.</li>
@@ -68,7 +90,7 @@ const updated = '15 November 2026';
 
     <h2 id="moderation">7. If something goes wrong</h2>
     <ul>
-      <li>If a deal or listing breaks these terms, or families report a problem, we may pause your listing or end a deal. We'll email you to say why.</li>
+      <li>If a deal, offer or listing breaks these terms, or families report a problem, we may pause your listing or end a deal or offer. We'll email you to say why.</li>
       <li>If you disagree, reply to that email and we'll look at it again.</li>
       <li>We may remove a listing straight away if it's unsafe, unlawful or seriously misleading.</li>
     </ul>

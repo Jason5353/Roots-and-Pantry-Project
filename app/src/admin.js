@@ -4,6 +4,7 @@ import { html, raw, now, randomId, clean, normEmail, validEmail, sha256 } from '
 import { page, errorList, field } from './layout.js';
 import { sendEmail, rateLimit, audit } from './services.js';
 import { latestBackup } from './backup.js';
+import { kindText, untilText } from './offers.js';
 import { issueCode, checkCode, isAdmin, CODE_MINUTES_VALID } from './auth.js';
 import { dealState, offerText, howText, niceDate, todayUK } from './producer.js';
 
@@ -203,7 +204,8 @@ export async function producerDetail(request, env, user, id, { errors = [], valu
   const p = await getProducerById(env, id);
   if (!p) return null;
   const deals = await env.DB.prepare('SELECT * FROM deals WHERE producer_id = ? ORDER BY ends_on DESC').bind(p.id).all().then((r) => r.results);
-  const history = await historyFor(env, [p.id, p.user_id, ...deals.map((d) => d.id)]);
+  const offers = await env.DB.prepare('SELECT * FROM offers WHERE producer_id = ? ORDER BY ends_on DESC').bind(p.id).all().then((r) => r.results);
+  const history = await historyFor(env, [p.id, p.user_id, ...deals.map((d) => d.id), ...offers.map((o) => o.id)]);
   const today = todayUK();
   const err = (f) => errors.find((e) => e.field === f)?.msg;
   const reasonForm = (to, label, btnClass, hint) => html`<form method="post" action="/admin/producers/${p.id}/status" novalidate class="reasonform">
@@ -271,6 +273,26 @@ export async function producerDetail(request, env, user, id, { errors = [], valu
         })}</ul>` : html`<p>No deals yet.</p>`}
       </section>
 
+      <section class="panel" aria-labelledby="offers-h">
+        <h2 id="offers-h">Offers and specials</h2>
+        ${offers.length ? html`<ul class="deals">${offers.map((o) => {
+          const [state, label] = dealState(o, p.status, today);
+          return html`<li class="deal">
+            <div class="deal-main">
+              <p class="deal-title"><b>${o.title}</b> <span class="tag tag-${state}">${state === 'waiting' ? 'Waiting for listing approval' : label}</span>${o.christmas ? html` <span class="tag tag-xmas">Christmas</span>` : ''}</p>
+              <p class="deal-meta">${kindText[o.kind]} · ${o.price} · ${howText[o.how]} · ${niceDate(o.starts_on)} to ${niceDate(o.ends_on)} (${untilText(o)})${o.alcohol ? ' · Adults only' : ''}</p>
+              ${o.details ? html`<p class="deal-meta">Details: ${o.details}</p>` : ''}
+              ${o.ready_text || o.allergens || o.order_url ? html`<p class="deal-meta">${[o.ready_text && `Ready: ${o.ready_text}`, o.allergens && `Allergens: ${o.allergens}`, o.order_url && `Order at ${o.order_url}`].filter(Boolean).join(' · ')}</p>` : ''}
+            </div>
+            ${state !== 'ended' ? html`<details class="deal-actions"><summary>End this offer<span class="sr-only">: ${o.title}</span></summary>
+              <form method="post" action="/admin/offers/${o.id}/end" novalidate>
+                ${field({ id: `end-${o.id}`, label: 'Reason (sent to the producer)', rows: 2, max: 600, value: values[`end-${o.id}`] || '', error: err(`end-${o.id}`) })}
+                <button class="btn btn-red btn-sm" type="submit">End offer and email them</button>
+              </form></details>` : ''}
+          </li>`;
+        })}</ul>` : html`<p>No offers yet.</p>`}
+      </section>
+
       <section class="panel" aria-labelledby="hist-h">
         <h2 id="hist-h">History</h2>
         ${history.length ? html`<ul class="plain">${history.map((a) => html`<li>${fmtTime(a.created_at)} · <b>${a.action}</b> by ${a.actor_email || 'system'}${a.detail ? ` · ${detailText(a.detail)}` : ''}</li>`)}</ul>` : html`<p>Nothing yet.</p>`}
@@ -313,8 +335,9 @@ export async function postProducerStatus(request, env, user, id, form) {
   return redirect(request, `/admin/producers/${p.id}?done=1`);
 }
 
-export async function postEndDeal(request, env, user, dealId, form) {
-  const d = await env.DB.prepare('SELECT * FROM deals WHERE id = ?').bind(dealId).first();
+export async function postEndDeal(request, env, user, itemId, form, table = 'deals') {
+  const word = table === 'offers' ? 'offer' : 'deal';
+  const d = await env.DB.prepare(`SELECT * FROM ${table === 'offers' ? 'offers' : 'deals'} WHERE id = ?`).bind(itemId).first();
   if (!d) return null;
   const p = await getProducerById(env, d.producer_id);
   const reason = clean(form.get(`end-${d.id}`), 600);
@@ -322,13 +345,13 @@ export async function postEndDeal(request, env, user, dealId, form) {
     return producerDetail(request, env, user, p.id, { errors: [{ field: `end-${d.id}`, msg: 'Give the producer a reason (at least 10 characters). It goes in the email.' }], values: { [`end-${d.id}`]: reason } });
   }
   if (d.status !== 'ended') {
-    await env.DB.prepare("UPDATE deals SET status = 'ended', updated_at = ? WHERE id = ?").bind(now(), d.id).run();
-    await audit(env, user.id, 'deal.ended_by_admin', d.id, { producer: p.id, reason });
+    await env.DB.prepare(`UPDATE ${table === 'offers' ? 'offers' : 'deals'} SET status = 'ended', updated_at = ? WHERE id = ?`).bind(now(), d.id).run();
+    await audit(env, user.id, `${word}.ended_by_admin`, d.id, { producer: p.id, reason });
     await sendEmail(env, {
       to: p.email,
       replyTo: env.NOTIFY_EMAIL,
-      subject: 'We have ended one of your Roots & Pantry deals',
-      text: `Hi ${p.contact_name},\n\nWe've ended your deal "${d.title}", so families can no longer see it.\n\nThe reason: ${reason}\n\nYou can add a new deal from your dashboard at any time: ${new URL(request.url).origin}/producer\n\nAny questions, just reply to this email.\n\nJason\nRoots & Pantry`,
+      subject: `We have ended one of your Roots & Pantry ${word}s`,
+      text: `Hi ${p.contact_name},\n\nWe've ended your ${word} "${d.title}", so people can no longer see it.\n\nThe reason: ${reason}\n\nYou can add a new ${word} from your dashboard at any time: ${new URL(request.url).origin}/producer\n\nAny questions, just reply to this email.\n\nJason\nRoots & Pantry`,
     });
   }
   return redirect(request, `/admin/producers/${p.id}?done=1`);

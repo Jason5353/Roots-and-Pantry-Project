@@ -40,7 +40,9 @@ export async function approvedProducers(env) {
   return env.DB.prepare(
     `SELECT p.slug, p.business_name, p.description, p.county, p.district, p.delivery_reach, p.delivery_miles, p.shop_address, p.market_days, p.website,
        d.lat, d.lng, d.town,
-       (SELECT COUNT(*) FROM deals x WHERE x.producer_id = p.id AND x.status = 'active' AND x.starts_on <= ?1 AND x.ends_on >= ?1) AS deals
+       (SELECT COUNT(*) FROM deals x WHERE x.producer_id = p.id AND x.status = 'active' AND x.starts_on <= ?1 AND x.ends_on >= ?1) AS deals,
+       (SELECT COUNT(*) FROM offers o WHERE o.producer_id = p.id AND o.status = 'active' AND o.starts_on <= ?1 AND o.ends_on >= ?1) AS offers,
+       (SELECT COUNT(*) FROM offers o WHERE o.producer_id = p.id AND o.status = 'active' AND o.christmas = 1 AND o.starts_on <= ?1 AND o.ends_on >= ?1) AS xmas
      FROM producers p LEFT JOIN postcode_districts d ON d.outcode = p.district
      WHERE p.status = 'approved'`,
   ).bind(today).all().then((r) => r.results);
@@ -49,6 +51,8 @@ export async function approvedProducers(env) {
 function card(p, { miles = null, headingLevel = 3 } = {}) {
   const tags = [];
   if (p.deals) tags.push(`${p.deals} ${p.deals === 1 ? 'deal' : 'deals'} for families`);
+  if (p.offers) tags.push(`${p.offers} ${p.offers === 1 ? 'offer' : 'offers'}`);
+  if (p.xmas) tags.push('Christmas orders');
   if (p.delivery_reach === 'uk') tags.push('Delivers UK-wide');
   else if (p.delivery_reach === 'miles') tags.push(`Delivers within ${p.delivery_miles} miles`);
   else if (p.delivery_reach === 'local') tags.push('Local delivery');
@@ -90,6 +94,9 @@ function searchForms(env, { near = '', miles = DEFAULT_MILES, county = '', error
   </div>`;
 }
 
+// Christmas page link, shown in November and December only.
+const christmasLink = (today = todayUK()) => (['11', '12'].includes(today.slice(5, 7)) ? html`<p class="callout"><b>Christmas:</b> <a href="/producers/christmas">See Christmas orders and gifts from local producers</a>.</p>` : '');
+
 const nominate = (env) => html`<p>Know a great local food or drink producer? <a href="/contact?topic=${encodeURIComponent('Nominate a producer')}">Nominate them</a> and we'll get in touch.</p>`;
 
 function directoryPage(env, user, { title = 'Local producers', status = 200, body }) {
@@ -100,6 +107,7 @@ function directoryPage(env, user, { title = 'Local producers', status = 200, bod
     body: html`<div class="dir">
       <h1>Local food producers</h1>
       <p class="sub">Independent farms, bakers, makers and shops with deals for Roots &amp; Pantry families.</p>
+      ${christmasLink()}
       ${body}
       <p class="note">Distances are measured between the middle of each postcode district, so they're approximate.</p>
     </div>`,
