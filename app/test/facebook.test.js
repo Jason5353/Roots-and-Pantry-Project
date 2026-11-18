@@ -128,6 +128,8 @@ describe('Facebook auto-posting', () => {
     let page = await (await get('/admin/facebook', { Cookie: cookie })).text();
     expect(page).toContain('New producer: FB Admin Farm');
     expect(page).toContain('Automatic posting is <b>off</b>');
+    expect(page).toContain(`<span class="fburl">${env.APP_URL}/p/${p.slug}</span>`);
+    expect(page).toContain(`href="${env.APP_URL}/p/${p.slug}" target="_blank" rel="noopener">Open link`);
     expect((await post(`/admin/facebook/${row.id}/cancel`, {}, { Cookie: cookie })).status).toBe(303);
     expect((await q('SELECT status, note FROM fb_posts WHERE id = ?', row.id).first()).status).toBe('cancelled');
     expect((await post(`/admin/facebook/${row.id}/cancel`, {}, { Cookie: cookie })).status).toBe(404);

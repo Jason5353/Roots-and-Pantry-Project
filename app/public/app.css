@@ -223,3 +223,4 @@ ul.plain li.offer-deal { border-color: var(--basil); background: var(--basil-sof
 .offer-price { display: inline-block; font-weight: 800; color: var(--basil); white-space: nowrap }
 .offer-deal .offer-price { color: #145234 }
 .fbtext { white-space: pre-line; background: #F4F5F8; border-radius: 10px; padding: 10px 14px; margin: 8px 0 }
+.fblink { margin: 4px 0 } .fburl { overflow-wrap: anywhere; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9rem }

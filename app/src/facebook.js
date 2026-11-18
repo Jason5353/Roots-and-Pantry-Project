@@ -125,7 +125,7 @@ export async function facebookAdmin(request, env, user, url, { adminPage, done =
     ORDER BY f.created_at DESC LIMIT 50`).all()).results;
   const ready = fbReady(env);
   // Show the draft text for posts still waiting, so it can be read before it goes out.
-  for (const r of rows) if (r.status === 'queued') { const b = await buildPost(env, r); r.message = b.skip ? null : b.message; r.note = b.skip ? `Will be skipped: ${b.skip}` : null; }
+  for (const r of rows) if (r.status === 'queued') { const b = await buildPost(env, r); r.message = b.skip ? null : b.message; r.link = b.skip ? null : b.link; r.note = b.skip ? `Will be skipped: ${b.skip}` : null; }
   const t = now();
   const flash = { now: 'Done. See the result below.', cancelled: 'Cancelled. It won\'t be posted.' }[done];
   return adminPage(env, user, {
@@ -141,7 +141,9 @@ export async function facebookAdmin(request, env, user, url, { adminPage, done =
           <p class="deal-title"><b>${r.kind === 'producer' ? `New producer: ${r.business_name}` : `Offer: ${r.offer_title || '(deleted)'}, ${r.business_name}`}</b> <span class="tag tag-${STATUS_TAG[r.status]}">${STATUS_TEXT[r.status]}</span></p>
           <p class="deal-meta">${r.status === 'queued' ? (r.post_after <= t ? 'Due: goes out at the next half past the hour' : `Posts after ${fmt(r.post_after)}`) : `Updated ${fmt(r.updated_at)}`}${r.note ? ` · ${r.note}` : ''}</p>
           ${r.message ? html`<p class="fbtext">${r.message}</p>` : ''}
-          ${r.fb_post_id ? html`<p><a href="https://www.facebook.com/${r.fb_post_id}" rel="noopener">See the post on Facebook</a></p>` : html`<p><a href="/p/${r.slug}">Producer page</a></p>`}
+          ${r.link ? html`<p class="fblink"><span class="deal-meta">Link in the post:</span> <span class="fburl">${r.link}</span></p>
+            <p class="btns"><a class="btn btn-ghost btn-sm" href="${r.link}" target="_blank" rel="noopener">Open link<span class="sr-only"> for ${r.kind === 'producer' ? r.business_name : r.offer_title} (opens in a new tab)</span></a>${r.fb_post_id ? html` <a class="btn btn-ghost btn-sm" href="https://www.facebook.com/${r.fb_post_id}" target="_blank" rel="noopener">See the post on Facebook<span class="sr-only"> (opens in a new tab)</span></a>` : ''}</p>`
+          : html`<p><a href="/p/${r.slug}">Producer page</a></p>`}
         </div>
         <div class="deal-actions">
           ${['queued', 'dry_run', 'failed'].includes(r.status) ? html`<form method="post" action="/admin/facebook/${r.id}/now"><button class="btn btn-green btn-sm">${r.status === 'queued' ? 'Post now' : 'Try posting again'}</button></form>` : ''}
