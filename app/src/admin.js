@@ -132,7 +132,7 @@ export async function overview(request, env, user) {
        WHERE p.status = 'approved' AND d.status = 'active' AND d.ends_on >= ? AND d.ends_on <= date(?, '+7 days')`, today, today),
     q("SELECT COUNT(*) AS n FROM messages WHERE status = 'new'"),
   ]);
-  const followUps = await q("SELECT COUNT(*) AS n FROM outreach WHERE stage = 'contacted' AND contact_count = 1 AND follow_up_on <= ?", today);
+  const followUps = await q("SELECT COUNT(*) AS n FROM outreach WHERE stage = 'contacted' AND follow_up_on <= ?", today);
   const pending = await env.DB.prepare("SELECT p.id, p.business_name, p.county, p.created_at FROM producers p WHERE p.status = 'pending' ORDER BY p.created_at LIMIT 20").all().then((r) => r.results);
   const backup = await latestBackup(env).catch(() => null);
   const backupOld = !backup || Date.now() - backup.uploaded.getTime() > 36 * 3600 * 1000;

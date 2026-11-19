@@ -17,7 +17,6 @@ export const STAGES = { todo: 'To contact', contacted: 'Contacted', replied: 'Re
 const METHODS = { email: 'Email', letter: 'Letter', visit: 'Visit or market chat', phone: 'Phone call', facebook: 'Facebook message' };
 const MAX_IMPORT_ROWS = 500;
 const FOLLOW_UP_DAYS = { email: 7, other: 14 };
-const NO_REPLY_DAYS = 14; // after the follow-up, wait this long before marking "No reply"
 const FOOTER_GAP = '\n\n\n\n\n'; // 4 blank lines before the company line
 const POSTAL = ['Roots & Pantry', '254 Holyhead Road', 'Wellington', 'Telford', 'TF1 2EB'];
 
@@ -34,6 +33,9 @@ const canMessage = (o) => o.stage !== 'not_interested' && (corporate(o) || faceb
 const logConsent = (env, id, event, channel, detail, userId) => env.DB.prepare('INSERT INTO outreach_consent_log (outreach_id, event, channel, detail, by_user, created_at) VALUES (?, ?, ?, ?, ?, ?)')
   .bind(id, event, channel, detail, userId, now());
 const CONSENT_EVENT = { given: 'Permission given', withdrawn: 'Permission withdrawn', reopened: 'Reopened' };
+// Until 19 Nov 2026 the "tell me more" form promised "at most one reminder". Keep that promise for anyone who ticked it then.
+const ONE_REMINDER_UNTIL = Date.parse('2026-11-20T00:00:00Z') / 1000;
+const promisedOneReminder = (o) => !!o.consent_email_at && o.consent_email_at < ONE_REMINDER_UNTIL && o.contact_count >= 2;
 const consentDate = (ts) => new Date(ts * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/London' });
 const okLine = (o, channel) => {
   const at = channel === 'email' ? o.consent_email_at : o.consent_facebook_at;
@@ -41,7 +43,8 @@ const okLine = (o, channel) => {
   return `✓ ${KINDS[o.kind]}${o.company_number ? ` (Companies House ${o.company_number})` : ''}, so a business ${channel === 'email' ? 'email' : 'message'} is allowed.${channel === 'facebook' ? ' Facebook messages follow the same rule as email.' : ''}`;
 };
 const methodAllowed = (o, m) => (m === 'email' ? canEmail(o) : m === 'facebook' ? canMessage(o) : true);
-const isDue = (o, today) => o.stage === 'contacted' && o.contact_count === 1 && o.follow_up_on && o.follow_up_on <= today;
+// Follow-ups: as many as you like. Each contact sets a reminder (7 days after an email or Facebook message, 14 after anything else).
+const isDue = (o, today) => o.stage === 'contacted' && o.follow_up_on && o.follow_up_on <= today;
 const addDays = (ymd, n) => new Date(Date.parse(`${ymd}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 const shortDate = (ymd) => new Date(`${ymd}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 const fmtTime = (ts) => new Date(ts * 1000).toLocaleString('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -89,7 +92,7 @@ Just a quick follow-up to my email${o.last_contact_on ? ` of ${niceDate(o.last_c
 
 Joining takes about 5 minutes: ${join}
 
-This is the only follow-up I'll send. If it's not for you, just reply "no thanks".
+If it's not for you, just reply "no thanks" and I won't contact you again.
 
 ${signOff(user)}${FOOTER_GAP}${COMPANY}`,
     };
@@ -116,7 +119,7 @@ export function facebookFor(o, which, { user, request, env }) {
   const hi = `Hi ${firstName(o.contact_name) || 'there'},`;
   const join = `${appUrl(request, env)}/producer/join`;
   if (which === 'follow_up') {
-    return `${hi} just a quick follow-up to my message${o.last_contact_on ? ` of ${niceDate(o.last_contact_on)}` : ''} about a free listing for ${o.business_name} on Roots & Pantry. Families find you by postcode and you can set your own exclusive deals for them. Joining takes about 5 minutes: ${join}\n\nThis is the only follow-up I'll send. If it's not for you, just reply "no thanks".`;
+    return `${hi} just a quick follow-up to my message${o.last_contact_on ? ` of ${niceDate(o.last_contact_on)}` : ''} about a free listing for ${o.business_name} on Roots & Pantry. Families find you by postcode and you can set your own exclusive deals for them. Joining takes about 5 minutes: ${join}\n\nIf it's not for you, just reply "no thanks" and I won't message again.`;
   }
   return `${hi} ${intro(user)} a new free website that helps families${o.county ? ` in ${o.county}` : ''} find independent local food producers like ${o.business_name}.\n\nBeing listed is free. Families find you by postcode, and you can set your own exclusive deals for them. You can also list your own offers, like multibuys, gift boxes and Christmas orders.${productLine(o)}\n\nJoining takes about 5 minutes: ${join}\n\nIf it's not for you, just reply "no thanks" and I won't message again.`;
 }
@@ -134,7 +137,7 @@ export async function outreachList(request, env, user, url) {
   const q = clean(url.searchParams.get('q'), 60);
   const where = [];
   const bind = [];
-  if (tab === 'due') { where.push("o.stage = 'contacted' AND o.contact_count = 1 AND o.follow_up_on <= ?"); bind.push(today); }
+  if (tab === 'due') { where.push("o.stage = 'contacted' AND o.follow_up_on <= ?"); bind.push(today); }
   else if (tab !== 'all') { where.push('o.stage = ?'); bind.push(tab); }
   if (county) { where.push('o.county = ?'); bind.push(county); }
   if (kind) { where.push('o.kind = ?'); bind.push(kind); }
@@ -144,7 +147,7 @@ export async function outreachList(request, env, user, url) {
       ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY o.follow_up_on IS NULL, o.follow_up_on, o.business_name COLLATE NOCASE LIMIT 200`).bind(...bind).all().then((r) => r.results),
     env.DB.prepare(`SELECT
         SUM(stage = 'todo') AS todo, SUM(stage = 'contacted') AS contacted, SUM(stage = 'joined') AS joined,
-        SUM(stage = 'contacted' AND contact_count = 1 AND follow_up_on <= ?) AS due FROM outreach`).bind(today).first(),
+        SUM(stage = 'contacted' AND follow_up_on <= ?) AS due FROM outreach`).bind(today).first(),
     env.DB.prepare('SELECT COUNT(*) AS n FROM outreach').first(),
   ]);
   const keep = (extra) => { const p = new URLSearchParams({ tab, ...(county && { county }), ...(kind && { kind }), ...(q && { q }), ...extra }); return `/admin/outreach?${p}`; };
@@ -321,10 +324,11 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
   const today = todayUK();
   const history = await env.DB.prepare('SELECT c.*, u.display_name, u.email FROM outreach_consent_log c LEFT JOIN users u ON u.id = c.by_user WHERE c.outreach_id = ? ORDER BY c.id DESC').bind(id).all().then((r) => r.results);
   const notes = await env.DB.prepare('SELECT n.*, u.display_name, u.email FROM outreach_notes n LEFT JOIN users u ON u.id = n.by_user WHERE n.outreach_id = ? ORDER BY n.id DESC LIMIT 100').bind(id).all().then((r) => r.results);
-  const open = o.stage === 'todo' || o.stage === 'contacted';
+  const open = ['todo', 'contacted', 'no_reply'].includes(o.stage);
   const errFor = (f) => errors.find((e) => e.field === f)?.msg;
   const howInput = (fid) => html`${errFor(fid) ? html`<p class="error" id="${fid}-err">${errFor(fid)}</p>` : ''}<input id="${fid}" name="how" type="text" maxlength="200" required ${errFor(fid) ? raw(`aria-invalid="true" aria-describedby="${fid}-err"`) : ''} />`;
-  const which = o.contact_count === 0 ? 'first' : o.contact_count === 1 ? 'follow_up' : null;
+  const which = o.contact_count === 0 ? 'first' : 'follow_up';
+  const nth = o.contact_count === 1 ? 'Follow-up' : `Follow-up ${o.contact_count}`; // 2nd contact = "Follow-up", 3rd = "Follow-up 2"…
   const nextPanel = () => {
     if (o.stage === 'not_interested') return html`<section class="panel" id="next"><h2>Don't contact</h2>
       <p>They said they're not interested${o.consent_withdrawn_at ? ` on ${consentDate(o.consent_withdrawn_at)}` : ''}. Don't email, message or write to them. Their permission history is kept below.</p>
@@ -335,7 +339,7 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
           <p class="hint">For example, "emailed hello@ on 3 March asking to join". Reopening doesn't give permission to email a sole trader again: they need to say yes again, for example on the website form.</p>
           <button class="btn btn-ghost btn-sm" type="submit">Reopen</button></form></details></section>`;
     if (!open || !which) return '';
-    const heading = which === 'first' ? 'First contact' : isDue(o, today) ? 'Follow-up' : `Follow-up (due ${niceDate(o.follow_up_on)})`;
+    const heading = which === 'first' ? 'First contact' : isDue(o, today) || !o.follow_up_on ? nth : `${nth} (reminder ${niceDate(o.follow_up_on)})`;
     const markForm = html`<form method="post" action="/admin/outreach/${o.id}/contacted" class="markform">
       <label for="method">How did you get in touch?</label>
       <select id="method" name="method">${Object.entries(METHODS).filter(([k]) => methodAllowed(o, k)).map(([k, label]) => html`<option value="${k}" ${(canEmail(o) ? k === 'email' : canMessage(o) && o.facebook ? k === 'facebook' : k === 'letter') ? raw('selected') : ''}>${label}</option>`)}</select>
@@ -349,7 +353,7 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
     let tool;
     if (canEmail(o)) {
       const e = emailFor(o, which, { user, request, env });
-      tool = html`<p class="pecr">${okLine(o, 'email')}${which === 'follow_up' ? ' This is the one follow-up. After it, the email tools go away.' : ''}</p>
+      tool = html`<p class="pecr">${okLine(o, 'email')}${which === 'follow_up' ? ` They've been contacted ${o.contact_count} ${o.contact_count === 1 ? 'time' : 'times'} so far.` : ''}</p>
         <p><b>To:</b> ${o.email}<br /><b>Subject:</b> ${e.subject}</p>
         <label for="emailtext" class="sr-only">Email text</label>
         <textarea id="emailtext" class="emailbox" rows="26" readonly>${e.body}</textarea>
@@ -358,7 +362,7 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
         <p class="hint">Paste into Zoho Mail and send from hello@ (the company line pastes in small text). Then mark it as done below, so the follow-up date is set.</p>
         ${o.facebook ? html`<details class="alt"><summary>Or send a Facebook message instead</summary>${fbTool()}</details>` : ''}`;
     } else if (canMessage(o) && o.facebook) {
-      tool = html`<p class="pecr">${okLine(o, 'facebook')}${which === 'follow_up' ? ' This is the one follow-up.' : ''}</p>${fbTool()}`;
+      tool = html`<p class="pecr">${okLine(o, 'facebook')}${which === 'follow_up' ? ` They've been contacted ${o.contact_count} ${o.contact_count === 1 ? 'time' : 'times'} so far.` : ''}</p>${fbTool()}`;
     } else {
       const why = o.kind === 'unknown'
         ? 'Check Companies House first. If they are a Ltd company or LLP, set the business type and add their email to send an email.'
@@ -366,7 +370,8 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
       tool = html`<p class="pecr pecr-no">${why}</p>
         ${o.address ? html`<div class="btns"><a class="btn btn-green" href="/admin/outreach/${o.id}/letter">Print ${which === 'first' ? 'letter' : 'follow-up letter'}</a></div>` : html`<p>Add a postal address to print a letter.</p>`}`;
     }
-    return html`<section class="panel" id="next" aria-labelledby="next-h"><h2 id="next-h">${heading}</h2>${tool}${markForm}</section>`;
+    const promise = promisedOneReminder(o) ? html`<p class="pecr pecr-no"><b>Don't follow up again.</b> They asked us for details on ${consentDate(o.consent_email_at)}, when our form promised at most one reminder, and they've had it. Wait for them to get in touch.</p>` : '';
+    return html`<section class="panel" id="next" aria-labelledby="next-h"><h2 id="next-h">${heading}</h2>${promise}${tool}${markForm}</section>`;
   };
   const stageBtn = (to, label, cls = 'btn-ghost') => html`<form method="post" action="/admin/outreach/${o.id}/stage" class="inline"><input type="hidden" name="stage" value="${to}" /><button class="btn ${cls} btn-sm" type="submit">${label}</button></form>`;
   const where = [o.town, o.county].filter(Boolean).join(', ');
@@ -384,10 +389,11 @@ export async function outreachItem(request, env, user, id, { errors = [], note =
         <div>
           ${nextPanel()}
           <section class="panel" aria-labelledby="stage-h"><h2 id="stage-h">Stage</h2>
-            <p>Now: <b>${STAGES[o.stage]}</b>${o.contact_count ? ` · ${o.contact_count === 1 ? 'first contact done' : 'follow-up done'}` : ''}${o.last_contact_on ? ` · last contact ${niceDate(o.last_contact_on)}` : ''}</p>
+            <p>Now: <b>${STAGES[o.stage]}</b>${o.contact_count ? ` · contacted ${o.contact_count === 1 ? 'once' : `${o.contact_count} times`}` : ''}${o.last_contact_on ? ` · last contact ${niceDate(o.last_contact_on)}` : ''}</p>
             <div class="btns">
               ${o.stage !== 'replied' && o.stage !== 'not_interested' ? stageBtn('replied', 'They replied') : ''}
               ${o.stage !== 'joined' && o.stage !== 'not_interested' ? stageBtn('joined', 'They joined') : ''}
+              ${o.stage === 'contacted' ? stageBtn('no_reply', 'No reply: stop reminders') : ''}
               ${o.stage !== 'todo' && o.stage !== 'not_interested' ? stageBtn('todo', 'Back to "to contact"') : ''}
             </div>
             ${o.stage !== 'not_interested' ? html`<details class="danger" ${errFor('no-how') ? raw('open') : ''}><summary>Not interested, don't contact again</summary>
@@ -438,14 +444,14 @@ export async function postContacted(request, env, user, id, form) {
   if (!o) return null;
   const method = METHODS[form.get('method')] ? String(form.get('method')) : 'letter';
   if (!methodAllowed(o, method)) return redirect(request, `/admin/outreach/${id}`);
-  if (!(o.stage === 'todo' || o.stage === 'contacted') || o.contact_count >= 2) return redirect(request, `/admin/outreach/${id}`);
+  if (!['todo', 'contacted', 'no_reply'].includes(o.stage)) return redirect(request, `/admin/outreach/${id}`);
   const today = todayUK();
   const count = o.contact_count + 1;
-  const follow = count === 1 ? addDays(today, method === 'email' || method === 'facebook' ? FOLLOW_UP_DAYS.email : FOLLOW_UP_DAYS.other) : addDays(today, NO_REPLY_DAYS);
+  const follow = addDays(today, method === 'email' || method === 'facebook' ? FOLLOW_UP_DAYS.email : FOLLOW_UP_DAYS.other);
   const what = { email: 'email sent', letter: 'letter sent', visit: 'visit or market chat', phone: 'phone call', facebook: 'Facebook message sent' }[method];
   await env.DB.batch([
     env.DB.prepare("UPDATE outreach SET stage = 'contacted', contact_count = ?, last_contact_on = ?, follow_up_on = ?, updated_at = ? WHERE id = ?").bind(count, today, follow, now(), id),
-    addNote(env, id, user.id, `${count === 1 ? 'First contact' : 'Follow-up'}: ${what}`),
+    addNote(env, id, user.id, `${count === 1 ? 'First contact' : count === 2 ? 'Follow-up' : `Follow-up ${count - 1}`}: ${what}`),
   ]);
   await audit(env, user.id, 'outreach.contacted', id, { method, count });
   return redirect(request, `/admin/outreach/${id}`);
@@ -455,7 +461,7 @@ export async function postStage(request, env, user, id, form) {
   const o = await getItem(env, id);
   if (!o) return null;
   const to = String(form.get('stage') || '');
-  if (!['todo', 'replied', 'joined', 'not_interested'].includes(to)) return redirect(request, `/admin/outreach/${id}`);
+  if (!['todo', 'replied', 'joined', 'no_reply', 'not_interested'].includes(to)) return redirect(request, `/admin/outreach/${id}`);
   if (o.stage === 'not_interested' && to !== 'todo') return redirect(request, `/admin/outreach/${id}`);
   const how = clean(form.get('how'), 200);
   const t = now();
@@ -506,7 +512,7 @@ export async function postDelete(request, env, user, id) {
 export async function letter(request, env, user, id) {
   const o = await getItem(env, id);
   if (!o || !o.address) return null;
-  const follow = o.contact_count === 1;
+  const follow = o.contact_count >= 1;
   const join = `${appUrl(request, env)}/producer/join`;
   const from = user.display_name || 'The Roots & Pantry team';
   const doc = html`<!doctype html>
@@ -668,10 +674,10 @@ export async function markJoined(env, { producerId, email, website, facebook, bu
   return hits.length;
 }
 
-// Daily: mark records "no reply" once the follow-up wait is over, and email the team when follow-ups fall due today.
+// Daily: email the team when follow-ups fall due today. Nothing is closed automatically: use
+// "No reply: stop reminders" or "Not interested" on the record.
 export async function outreachDaily(env, today = todayUK()) {
-  await env.DB.prepare("UPDATE outreach SET stage = 'no_reply', follow_up_on = NULL, updated_at = ? WHERE stage = 'contacted' AND contact_count >= 2 AND follow_up_on < ?").bind(now(), today).run();
-  const due = await env.DB.prepare("SELECT business_name FROM outreach WHERE stage = 'contacted' AND contact_count = 1 AND follow_up_on = ? ORDER BY business_name LIMIT 50").bind(today).all().then((r) => r.results);
+  const due = await env.DB.prepare("SELECT business_name FROM outreach WHERE stage = 'contacted' AND follow_up_on = ? ORDER BY business_name LIMIT 50").bind(today).all().then((r) => r.results);
   if (!due.length) return 0;
   await sendEmail(env, {
     to: env.NOTIFY_EMAIL,
@@ -719,8 +725,8 @@ function interestForm(env, user, { values = {}, errors = [], sent = false } = {}
           <select id="county" name="county"><option value="">Choose…</option>${COUNTIES.map((c) => html`<option ${c === values.county ? raw('selected') : ''}>${c}</option>`)}</select></div>
         ${field({ id: 'products', label: 'What you make or sell', value: values.products, required: false, max: 80 })}
         ${field({ id: 'facebook', label: 'Facebook page', type: 'url', value: values.facebook, required: false, max: 300, hint: 'The full link, like https://www.facebook.com/yourbusiness', error: err('facebook') })}
-        ${check('consent_email', CONSENT_EMAIL, "We'll send you how it works now, and at most one reminder. Reply \"stop\" at any time and we won't email you again.", true)}
-        ${check('consent_facebook', CONSENT_FB, 'Only if you gave your Facebook page above. Same rules: one message and at most one reminder.', false)}
+        ${check('consent_email', CONSENT_EMAIL, "We'll send you how it works now, and may follow up if we don't hear back. Reply \"stop\" at any time and we won't email you again.", true)}
+        ${check('consent_facebook', CONSENT_FB, 'Only if you gave your Facebook page above. Same rules: reply "stop" at any time.', false)}
         <div class="hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
         ${turnstileWidget(env)}
         <button class="btn btn-green" type="submit">Send me the details</button>
@@ -795,7 +801,7 @@ Roots & Pantry is a free website that helps local families find and buy from ind
 Being listed is free. Joining takes about 5 minutes: ${join}
 More about how it works for producers: ${env.SITE_URL}/for-producers/
 
-Any questions, just reply to this email. We'll send you at most one reminder. If you'd rather we didn't, reply "stop" and we won't email you again.
+Any questions, just reply to this email. If you'd rather we didn't email you again, reply "stop".
 
 Jason
 Roots & Pantry · hello@rootsandpantry.co.uk${FOOTER_GAP}${COMPANY}`,

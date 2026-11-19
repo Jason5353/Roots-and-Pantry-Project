@@ -119,16 +119,39 @@ describe('outreach', () => {
     expect((await outbox(OWNER))[0].subject).toContain('1 producer follow-up due today');
     const fp = await (await get(`/admin/outreach/${o.id}`, { Cookie: owner })).text();
     expect(fp).toContain('Re: Free listing for Corvedale Creamery');
-    expect(fp).toContain('This is the only follow-up');
+    expect(fp).not.toContain('only follow-up');
+    expect(fp).toContain("won't contact you again");
     await post(`/admin/outreach/${o.id}/contacted`, { method: 'email' }, { Cookie: owner });
     x = await item('Corvedale Creamery');
     expect(x.contact_count).toBe(2);
-    // A third contact isn't allowed.
+    expect(x.follow_up_on > today()).toBe(true); // another reminder is set
+    // No limit: a third and fourth contact are allowed.
     await post(`/admin/outreach/${o.id}/contacted`, { method: 'email' }, { Cookie: owner });
-    expect((await item('Corvedale Creamery')).contact_count).toBe(2);
+    await post(`/admin/outreach/${o.id}/contacted`, { method: 'letter' }, { Cookie: owner });
+    x = await item('Corvedale Creamery');
+    expect(x.contact_count).toBe(4);
+    expect(await (await get(`/admin/outreach/${o.id}`, { Cookie: owner })).text()).toContain('Follow-up 3');
+    // Nothing is closed automatically, however late the reminder is.
     await env.DB.prepare("UPDATE outreach SET follow_up_on = '2000-01-01' WHERE id = ?").bind(o.id).run();
     await outreachDaily(env);
-    expect((await item('Corvedale Creamery')).stage).toBe('no_reply');
+    expect((await item('Corvedale Creamery')).stage).toBe('contacted');
+    // "No reply: stop reminders" closes it by hand, and you can still contact them again later.
+    await post(`/admin/outreach/${o.id}/stage`, { stage: 'no_reply' }, { Cookie: owner });
+    x = await item('Corvedale Creamery');
+    expect(x.stage).toBe('no_reply');
+    expect(x.follow_up_on).toBeNull();
+    await post(`/admin/outreach/${o.id}/contacted`, { method: 'email' }, { Cookie: owner });
+    x = await item('Corvedale Creamery');
+    expect(x.stage).toBe('contacted');
+    expect(x.contact_count).toBe(5);
+  });
+
+  it('keeps the old one-reminder promise for people who asked for details before 20 Nov 2026', async () => {
+    const o = await item('Corvedale Creamery');
+    await env.DB.prepare('UPDATE outreach SET consent_email_at = ?, contact_count = 2 WHERE id = ?').bind(Date.parse('2026-11-18T10:00:00Z') / 1000, o.id).run();
+    expect(await (await get(`/admin/outreach/${o.id}`, { Cookie: owner })).text()).toContain("Don't follow up again");
+    await env.DB.prepare('UPDATE outreach SET consent_email_at = ? WHERE id = ?').bind(Date.parse('2026-11-21T10:00:00Z') / 1000, o.id).run();
+    expect(await (await get(`/admin/outreach/${o.id}`, { Cookie: owner })).text()).not.toContain("Don't follow up again");
   });
 
   it('removes personal details when someone is not interested, and keeps the email so we never contact them again', async () => {
