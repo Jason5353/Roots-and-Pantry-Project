@@ -5,13 +5,36 @@ import { site } from '../data/site.js';
 <Layout title="How it works" active="how" description="How Roots & Pantry works for families and for local food producers.">
   <div class="wrap pagehead">
     <h1>How it works</h1>
-    <p class="sub">Three steps for families, three for producers. Short videos are on the way.</p>
+    <p class="sub">Watch the 75-second video, or read the three steps for families and three for producers below.</p>
   </div>
 
   <section class="block">
     <div class="wrap">
       <h2 class="sec">For families</h2>
-      <div class="video mt"><img src="/img/sunday-roast.webp" alt="" width="1000" height="558" loading="lazy" /><div class="soon"><span>Explainer video coming soon</span></div></div>
+      <figure class="film mt">
+        <video controls preload="none" playsinline poster="/video/how-it-works-poster.webp" width="1920" height="1080" aria-describedby="film-cap">
+          <source src="/video/how-it-works.mp4" type="video/mp4" />
+          <p>Your browser can't play this video. <a href="/video/how-it-works.mp4">Download it (MP4, 14 MB)</a> or read the transcript below.</p>
+        </video>
+        <figcaption id="film-cap">How Roots &amp; Pantry works, told through the Hartleys, a fictional family. Captions are shown in the video. 75 seconds, with sound.</figcaption>
+      </figure>
+      <details class="transcript">
+        <summary>Read the transcript</summary>
+        <div class="prose">
+          <p>The Hartley family look at the Roots &amp; Pantry app together in their kitchen.</p>
+          <p><b>Voiceover:</b> Meet the Hartleys. Their family recipes all live in Roots &amp; Pantry, the free family recipe app. And when a recipe needs cheese, meat or a jar of chutney, the app shows them exclusive deals from independent producers near home.</p>
+          <p>The phone shows a recipe's ingredients with local deals beside them, then a list of deals from local producers.</p>
+          <p><b>Voiceover:</b> On Saturday, Nana and Priya head to the market. Helen's farmhouse cheese is 10% off for Roots &amp; Pantry families. They save money, and Helen gains new regulars.</p>
+          <p>At a butcher's counter, Dave holds up his phone showing a 10% off code to show at the till.</p>
+          <p><b>Voiceover:</b> Dave pops into Tom's butcher's and shows his code on his phone. Better sausages for the family, and new trade for a local shop.</p>
+          <p><b>Voiceover:</b> Ruth's jams and chutneys arrive at the door, with the discount already applied to the order. She's found customers she'd never have reached on her own.</p>
+          <p>Helen, Tom and Ruth share a cup of tea at the market as they pack up.</p>
+          <p><b>Voiceover:</b> For local producers, it's free to list, simple to run, and it brings families to their stalls and shops, not the supermarket. And for the Hartleys? They eat well, spend less, and know exactly who made their dinner.</p>
+          <p>The family share dinner with sausages, cheese and chutney. The film ends on the Roots &amp; Pantry logo.</p>
+          <p><b>Voiceover:</b> Families save. Local producers grow. Roots &amp; Pantry. Free, forever.</p>
+          <p class="note">The Hartleys and the producers are fictional, and the photos are AI-generated. The phone screens are from our demo, with fictional codes. Music: "Cozy Upbeat Acoustic Indie Folk" by octosound (Pixabay).</p>
+        </div>
+      </details>
       <ol class="steps mt">
         <li><h3>Start your family group</h3><p>Sign up with an email code, Google or Facebook. Invite the family. Parents set up simple picture logins for younger children.</p></li>
         <li><h3>Add your recipes</h3><p>Paste a link from any recipe website, type in a handwritten recipe, or share straight from your phone. Each recipe keeps a credit to where it came from.</p></li>
