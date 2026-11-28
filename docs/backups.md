@@ -10,7 +10,7 @@ There are two kinds of backup, and they cover different problems.
 ## Nightly copies
 
 - **Where:** R2 buckets `rp-backups` (live) and `rp-backups-test` (test), both EU jurisdiction, binding `BACKUPS`. One file a day: `d1/YYYY-MM-DD.sql.gz`.
-- **Tables included:** users, producers, deals, offers, fb_posts, messages, audit_log, outreach, outreach_notes, outreach_consent_log.
+- **Tables included:** users, family_groups, family_members, family_invites, producers, deals, offers, fb_posts, messages, audit_log, outreach, outreach_notes, outreach_consent_log.
 - **Not included:** sign-in codes, sessions, rate limits (short-lived and sensitive), dev_outbox, postcode_districts (rebuilt by migration 0005).
 - **Format:** plain SQL, gzipped, one statement per line. It starts with `DELETE FROM` for each table, then `INSERT`s, so running it **replaces** those tables completely.
 - **Kept:** 30 days, then deleted by the same job. This matches the privacy notice ("Database backups") – change both together.
