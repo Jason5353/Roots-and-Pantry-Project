@@ -132,6 +132,10 @@ export async function overview(request, env, user) {
        WHERE p.status = 'approved' AND d.status = 'active' AND d.ends_on >= ? AND d.ends_on <= date(?, '+7 days')`, today, today),
     q("SELECT COUNT(*) AS n FROM messages WHERE status = 'new'"),
   ]);
+  // Counts only: admins never see family recipes, names or photos.
+  const families = await q(`SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE EXISTS (
+      SELECT 1 FROM family_members m JOIN users u ON u.id = m.user_id WHERE m.group_id = g.id AND u.last_login_at > ?)) AS active
+    FROM family_groups g`, Math.floor(Date.now() / 1000) - 30 * 86400);
   const followUps = await q("SELECT COUNT(*) AS n FROM outreach WHERE stage = 'contacted' AND follow_up_on <= ?", today);
   const pending = await env.DB.prepare("SELECT p.id, p.business_name, p.county, p.created_at FROM producers p WHERE p.status = 'pending' ORDER BY p.created_at LIMIT 20").all().then((r) => r.results);
   const backup = await latestBackup(env).catch(() => null);
@@ -147,7 +151,7 @@ export async function overview(request, env, user) {
         ${stat(liveDeals.n, 'live deals', '/admin/producers?status=approved')}
         ${stat(endingSoon.n, 'deals ending in the next 7 days', '/admin/producers?status=approved')}
       </ul>
-      <p class="note">Active family groups will show here once families open (stage 2).</p>
+      <p class="note" id="family-stats">Family groups: ${families.active} active (someone signed in within 30 days) of ${families.total}. Target: 50 active at 3 months after families open.</p>
       <h2>To do</h2>
       <ul class="stats">
         ${stat(byStatus.pending || 0, 'producers waiting for approval', '/admin/producers?status=pending')}

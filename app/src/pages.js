@@ -26,8 +26,11 @@ export function home(env, user) {
         </section>
         <section class="panel">
           <h2>Families</h2>
-          <p>Family sign-up opens soon. In the meantime, try the demo.</p>
-          <a class="btn btn-ghost" href="https://roots-and-pantry-demo.pages.dev/">Try the demo</a>
+          ${env.FAMILY_SIGNUP_OPEN === 'true'
+            ? html`<p>Start your family's free, private recipe book, then invite everyone by email.</p>
+              <a class="btn btn-red" href="${user ? '/family' : '/signin?next=/family'}">${user?.in_family ? 'Go to my family' : 'Start our recipe book'}</a>`
+            : html`<p>Family sign-up opens soon. In the meantime, try the demo.</p>
+              <a class="btn btn-ghost" href="https://roots-and-pantry-demo.pages.dev/">Try the demo</a>`}
         </section>
       </div>
       <p class="note">Questions? <a href="/contact">Contact us</a>.</p>

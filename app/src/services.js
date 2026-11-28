@@ -84,6 +84,8 @@ export async function cleanUp(env) {
     env.DB.prepare('DELETE FROM dev_outbox WHERE created_at < ?').bind(t - 7 * day),
     // Outreach: delete 12 months after the last update. "Not interested" stays so we never contact them again.
     env.DB.prepare("DELETE FROM outreach WHERE stage != 'not_interested' AND updated_at < ?").bind(t - 365 * day),
+    // Family invitations: 30 days after they were used, cancelled or ran out.
+    env.DB.prepare('DELETE FROM family_invites WHERE COALESCE(accepted_at, revoked_at, expires_at) < ?').bind(t - 30 * day),
   ]);
   return r.reduce((n, x) => n + (x.meta?.changes || 0), 0);
 }

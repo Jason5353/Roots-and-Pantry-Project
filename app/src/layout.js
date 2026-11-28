@@ -71,7 +71,7 @@ export function page(env, { title, user, body, head = '', turnstile = false, sta
         <a href="/producers">Producers</a>
         <a href="/contact">Contact</a>
         ${user
-          ? html`${user.role === 'owner' || user.role === 'moderator' ? html`<a href="/admin">Admin</a>` : ''}<a href="/producer">My listing</a><form method="post" action="/signout" class="inline"><button class="linkbtn" type="submit">Sign out</button></form>`
+          ? html`${user.role === 'owner' || user.role === 'moderator' ? html`<a href="/admin">Admin</a>` : ''}${env.FAMILY_SIGNUP_OPEN === 'true' ? html`<a href="/family">My family</a>` : ''}${user.is_producer || env.FAMILY_SIGNUP_OPEN !== 'true' ? html`<a href="/producer">My listing</a>` : ''}<form method="post" action="/signout" class="inline"><button class="linkbtn" type="submit">Sign out</button></form>`
           : html`<a href="/signin">Sign in</a>`}
       </nav>
     </div>

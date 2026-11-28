@@ -1,7 +1,7 @@
 // Roots & Pantry app Worker: routing, CSRF checks and error handling.
 import { html } from './util.js';
 import { page } from './layout.js';
-import { loadUser, getSignin, postSignin, postCode, postSignout, isAdmin } from './auth.js';
+import { loadUser, getSignin, postSignin, postCode, postSignout, landingFor } from './auth.js';
 import { outreachList, getNewItem, postNewItem, outreachItem, getEditItem, postEditItem, postContacted, postStage, postNote, postDelete, letter, getImport, postImport, csvTemplate, outreachDaily, getInterest, postInterest } from './outreach.js';
 import { adminGate, getConfirm, postConfirmSend, postConfirm, overview, producerList, producerDetail, postProducerStatus, postEndDeal, messageList, messageDetail, postMessageStatus, team, postTeamAdd, postTeamRemove, postTeamName, auditLog } from './admin.js';
 import { directory } from './directory.js';
@@ -11,6 +11,7 @@ import { nightlyBackup, HOURLY_CRON, BACKUP_HOUR_UTC } from './backup.js';
 import { processFacebookQueue, facebookAdmin, postFacebookNow, postFacebookCancel } from './facebook.js';
 import { adminPage } from './admin.js';
 import { tiles, emptyGlyphs, mapData, mapPage } from './map.js';
+import { routeFamily, familyOpen } from './family.js';
 import { home, getContact, postContact, getJoin, postJoin } from './pages.js';
 import { dashboard, getEdit, postEdit, getNewDeal, postNewDeal, getEditDeal, postEditDeal, postDealStatus, postRenew, publicPage, promote, printSheet, sendExpiryReminders } from './producer.js';
 
@@ -72,11 +73,16 @@ async function handle(request, env, ctx) {
     return (await routeAdmin(request, env, user, url, path, method === 'HEAD' ? 'GET' : method, form)) || notFound(env, user);
   }
 
+  if (path === '/family' || path.startsWith('/family/')) {
+    if (!familyOpen(env)) return notFound(env, user);
+    return (await routeFamily(request, env, user, url, path, method === 'HEAD' ? 'GET' : method, form, needUser)) || notFound(env, user);
+  }
+
   switch (`${method === 'HEAD' ? 'GET' : method} ${path}`) {
     case 'GET /': return home(env, user);
     case 'GET /contact': return getContact(request, env, user, url);
     case 'POST /contact': return postContact(request, env, user, form);
-    case 'GET /signin': return user ? Response.redirect(new URL(isAdmin(user) ? '/admin' : '/producer', url), 303) : getSignin(request, env, url);
+    case 'GET /signin': return user ? Response.redirect(new URL(landingFor(env, user), url), 303) : getSignin(request, env, url);
     case 'POST /signin': return postSignin(request, env, form);
     case 'POST /signin/code': return postCode(request, env, form);
     case 'POST /signout': return postSignout(request, env, user);

@@ -224,3 +224,12 @@ ul.plain li.offer-deal { border-color: var(--basil); background: var(--basil-sof
 .offer-deal .offer-price { color: #145234 }
 .fbtext { white-space: pre-line; background: #F4F5F8; border-radius: 10px; padding: 10px 14px; margin: 8px 0 }
 .fblink { margin: 4px 0 } .fburl { overflow-wrap: anywhere; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9rem }
+/* Family groups */
+details.danger-zone { margin: 24px 0 0; border-top: 1px solid var(--line); padding-top: 12px }
+details.danger-zone summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; color: var(--pepper-dark); text-decoration: underline; text-underline-offset: 3px }
+details.danger-zone form { margin: 8px 0 0 }
+details.danger-zone .check { margin: 0 0 16px }
+fieldset.field { border: 0; padding: 0; margin: 0 0 20px }
+fieldset.field legend { font-weight: 700; margin: 0 0 8px; padding: 0 }
+fieldset.field .check { margin: 0 0 10px }
+.panel h3 { margin: 20px 0 4px }

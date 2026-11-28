@@ -12,7 +12,10 @@ export async function loadUser(request, env) {
   const token = getCookie(request, COOKIE);
   if (!token || token.length > 100) return null;
   const row = await env.DB.prepare(
-    'SELECT u.id, u.email, u.role, u.display_name, s.last_auth_at, s.id_hash FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id_hash = ? AND s.expires_at > ?',
+    `SELECT u.id, u.email, u.role, u.display_name, s.last_auth_at, s.id_hash,
+       EXISTS (SELECT 1 FROM producers p WHERE p.user_id = u.id) AS is_producer,
+       EXISTS (SELECT 1 FROM family_members f WHERE f.user_id = u.id) AS in_family
+     FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id_hash = ? AND s.expires_at > ?`,
   ).bind(await sha256(token), now()).first();
   return row || null;
 }
@@ -46,6 +49,13 @@ export async function checkCode(env, email, code) {
 export const isAdmin = (user) => !!user && (user.role === 'owner' || user.role === 'moderator');
 export const CODE_MINUTES_VALID = CODE_MINUTES;
 
+// Where to send someone after sign-in when they didn't ask for a particular page.
+export function landingFor(env, user) {
+  if (isAdmin(user)) return '/admin';
+  if (env.FAMILY_SIGNUP_OPEN === 'true' && user.in_family && !user.is_producer) return '/family';
+  return '/producer';
+}
+
 function signinForm(env, { email = '', errors = [], next = '/producer' } = {}) {
   return page(env, {
     title: 'Sign in',
@@ -61,7 +71,9 @@ function signinForm(env, { email = '', errors = [], next = '/producer' } = {}) {
         ${turnstileWidget(env)}
         <button class="btn btn-red" type="submit">Email me a code</button>
       </form>
-      <p class="note">New producer? Sign in with your email first, then you can add your business.</p>
+      <p class="note">${env.FAMILY_SIGNUP_OPEN === 'true'
+        ? 'New here? Sign in with your email first. Then you can start your family recipe book, or add your business if you\'re a producer.'
+        : 'New producer? Sign in with your email first, then you can add your business.'}</p>
     </div>`,
   });
 }
@@ -125,7 +137,10 @@ export async function postCode(request, env, form) {
   if (result === 'wrong') return bad("That code doesn't match. Check the latest email and try again.");
 
   const t = now();
-  let user = await env.DB.prepare('SELECT id, role FROM users WHERE email = ?').bind(email).first();
+  let user = await env.DB.prepare(`SELECT id, role,
+      EXISTS (SELECT 1 FROM producers p WHERE p.user_id = users.id) AS is_producer,
+      EXISTS (SELECT 1 FROM family_members f WHERE f.user_id = users.id) AS in_family
+    FROM users WHERE email = ?`).bind(email).first();
   if (!user) {
     const role = email === normEmail(env.OWNER_EMAIL) ? 'owner' : 'producer';
     user = { id: randomId(), role };
@@ -138,7 +153,7 @@ export async function postCode(request, env, form) {
   await env.DB.prepare('INSERT INTO sessions (id_hash, user_id, created_at, expires_at, last_auth_at) VALUES (?, ?, ?, ?, ?)')
     .bind(await sha256(token), user.id, t, t + SESSION_DAYS * 86400, t).run();
   await audit(env, user.id, 'signin', user.id);
-  return new Response(null, { status: 303, headers: { Location: next === '/producer' && isAdmin(user) ? '/admin' : next, 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400), 'Cache-Control': 'no-store' } });
+  return new Response(null, { status: 303, headers: { Location: next === '/producer' ? landingFor(env, user) : next, 'Set-Cookie': sessionCookie(token, SESSION_DAYS * 86400), 'Cache-Control': 'no-store' } });
 }
 
 export async function postSignout(request, env, user) {

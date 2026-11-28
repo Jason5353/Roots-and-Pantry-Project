@@ -7,7 +7,7 @@
 import { sendEmail } from './services.js';
 
 // Parents before children, so inserts satisfy the foreign keys. Deletes run in reverse.
-export const BACKUP_TABLES = ['users', 'producers', 'deals', 'offers', 'fb_posts', 'messages', 'audit_log', 'outreach', 'outreach_notes', 'outreach_consent_log'];
+export const BACKUP_TABLES = ['users', 'family_groups', 'family_members', 'family_invites', 'producers', 'deals', 'offers', 'fb_posts', 'messages', 'audit_log', 'outreach', 'outreach_notes', 'outreach_consent_log'];
 export const BACKUP_DAYS = 30;
 export const HOURLY_CRON = '30 * * * *'; // must match wrangler.jsonc (both environments)
 export const BACKUP_HOUR_UTC = 8; // the backup runs in the 08:30 UTC run
